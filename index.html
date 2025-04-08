@@ -106,7 +106,7 @@
   <!-- External Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-  <!-- Correct GeoSearch version -->
+  <!-- GeoSearch library -->
   <script src="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
@@ -136,8 +136,8 @@
     // Ensure GeoSearch is loaded correctly
     console.log(window.GeoSearch); // Should not be undefined
 
-    const provider = new window.GeoSearch.OpenStreetMapProvider();
-    const searchControl = new window.GeoSearch.GeoSearchControl({
+    const provider = new GeoSearch.OpenStreetMapProvider();
+    const searchControl = new GeoSearch.GeoSearchControl({
       provider: provider,
       style: 'bar',
       showMarker: true,
