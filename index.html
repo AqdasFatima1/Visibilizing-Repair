@@ -133,19 +133,23 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Ensure GeoSearch is loaded correctly
-    console.log(window.GeoSearch); // Should not be undefined
-
-    const provider = new GeoSearch.OpenStreetMapProvider();
-    const searchControl = new GeoSearch.GeoSearchControl({
-      provider: provider,
-      style: 'bar',
-      showMarker: true,
-      retainZoomLevel: false,
-      autoClose: true,
-      searchLabel: 'Search for a place'
+    // Verify GeoSearch and OpenStreetMapProvider are loaded
+    window.addEventListener('load', function() {
+      if (typeof GeoSearch !== 'undefined' && GeoSearch.OpenStreetMapProvider) {
+        const provider = new GeoSearch.OpenStreetMapProvider();
+        const searchControl = new GeoSearch.GeoSearchControl({
+          provider: provider,
+          style: 'bar',
+          showMarker: true,
+          retainZoomLevel: false,
+          autoClose: true,
+          searchLabel: 'Search for a place'
+        });
+        map.addControl(searchControl);
+      } else {
+        console.error("GeoSearch or OpenStreetMapProvider is not loaded correctly");
+      }
     });
-    map.addControl(searchControl);
 
     const repairLayer = L.layerGroup().addTo(map);
     const needsRepairLayer = L.layerGroup().addTo(map);
