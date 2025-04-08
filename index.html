@@ -133,7 +133,7 @@
       maxZoom: 19
     }).addTo(map);
 
-    // Verify GeoSearch and OpenStreetMapProvider are loaded
+    // Initialize GeoSearch
     window.addEventListener('load', function() {
       if (typeof GeoSearch !== 'undefined' && GeoSearch.OpenStreetMapProvider) {
         const provider = new GeoSearch.OpenStreetMapProvider();
@@ -145,7 +145,7 @@
           autoClose: true,
           searchLabel: 'Search for a place'
         });
-        map.addControl(searchControl);
+        map.addControl(searchControl); // Add the search bar to the map
       } else {
         console.error("GeoSearch or OpenStreetMapProvider is not loaded correctly");
       }
