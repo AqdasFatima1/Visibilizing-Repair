@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-geosearch@3.0.0/dist/geosearch.css" />
   <style>
     body {
       margin: 0;
@@ -98,18 +97,22 @@
     <p>
       This map collects data on informal repair practices and infrastructure in need of care in NYC.<br>
       Click anywhere on the map to share a marker. Add a title, description, optional image, and select the layer it belongs to.<br>
-      Use the toggle to view either where repair happens or where it's needed. Use the search bar to find specific locations.
+      Use the toggle to view either where repair happens or where it's needed.
     </p>
   </header>
 
   <div id="map"></div>
 
+  <!-- External Libraries -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/leaflet-geosearch@3.0.0/dist/bundle.min.js"></script>
+  <!-- Correct GeoSearch version -->
+  <script src="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
   <script>
+    // Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
       authDomain: "repair-map-50701.firebaseapp.com",
@@ -130,6 +133,9 @@
       maxZoom: 19
     }).addTo(map);
 
+    // Ensure GeoSearch is loaded correctly
+    console.log(window.GeoSearch); // Should not be undefined
+
     const provider = new window.GeoSearch.OpenStreetMapProvider();
     const searchControl = new window.GeoSearch.GeoSearchControl({
       provider: provider,
@@ -141,8 +147,8 @@
     });
     map.addControl(searchControl);
 
-    const repairLayer = L.layerGroup();
-    const needsRepairLayer = L.layerGroup();
+    const repairLayer = L.layerGroup().addTo(map);
+    const needsRepairLayer = L.layerGroup().addTo(map);
 
     const layers = {
       "🛠 Where People Go for Repairs": repairLayer,
@@ -150,9 +156,6 @@
     };
 
     L.control.layers(null, layers, { position: 'topright', collapsed: false }).addTo(map);
-
-    repairLayer.addTo(map);
-    needsRepairLayer.addTo(map);
 
     const customIcon = new L.DivIcon({
       className: 'custom-icon',
