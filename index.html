@@ -11,6 +11,7 @@
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-o9N1j7kPzOZhXrWx1ZfnJtn3F8kQnZ04+Ouf+0FG3Q0="
     crossorigin=""
   />
   <link
@@ -65,7 +66,11 @@
   <div id="map"></div>
 
   <!-- Leaflet and plugins -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j7kPzOZhXrWx1ZfnJtn3F8kQnZ04+Ouf+0FG3Q0="
+    crossorigin=""
+  ></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
   <script>
@@ -79,8 +84,12 @@
     }).addTo(map);
 
     // Add search bar and keep it visible
-    const geocoder = L.Control.geocoder({
-      defaultMarkGeocode: false
+    const geocoder = L.Control.Geocoder.nominatim();
+    L.Control.geocoder({
+      query: '',
+      placeholder: 'Search here...',
+      defaultMarkGeocode: false,
+      geocoder
     })
       .on('markgeocode', function (e) {
         const bbox = e.geocode.bbox;
@@ -109,10 +118,9 @@
       popupAnchor: [0, -30]
     });
 
-    const repairLayer = L.layerGroup();
-    const brokenLayer = L.layerGroup();
+    const repairLayer = L.layerGroup().addTo(map);
+    const brokenLayer = L.layerGroup().addTo(map);
 
-    // Layer Control without emojis
     const overlays = {
       'Repair Locations': repairLayer,
       'Needs Repair': brokenLayer
@@ -127,9 +135,8 @@
       if (type === 'repair' || type === 'broken') {
         const description = prompt('Enter a description for this location:');
         const imageUrl = prompt('Optional: Enter an image URL to include:');
-        const popupContent = `<strong>${type === 'repair' ? 'Repair Site' : 'Needs Repair'}</strong><br>${description}<br>${
-          imageUrl ? `<img src="${imageUrl}" alt="User submitted" style="width: 100%; margin-top: 8px; border-radius: 8px;" />` : ''
-        }`;
+        const popupContent = `<strong>${type === 'repair' ? 'Repair Site' : 'Needs Repair'}</strong><br>${description}<br>$
+          {imageUrl ? `<img src="${imageUrl}" alt="User submitted" style="width: 100%; margin-top: 8px; border-radius: 8px;" />` : ''}`;
 
         const marker = L.marker(e.latlng, {
           icon: type === 'repair' ? repairIcon : brokenIcon
