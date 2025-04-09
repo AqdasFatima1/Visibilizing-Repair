@@ -84,12 +84,9 @@
     }).addTo(map);
 
     // Add search bar and keep it visible
-    const geocoder = L.Control.Geocoder.nominatim();
-    L.Control.geocoder({
-      query: '',
-      placeholder: 'Search here...',
+    const geocoderControl = L.Control.geocoder({
       defaultMarkGeocode: false,
-      geocoder
+      placeholder: 'Search here...'
     })
       .on('markgeocode', function (e) {
         const bbox = e.geocode.bbox;
@@ -135,8 +132,8 @@
       if (type === 'repair' || type === 'broken') {
         const description = prompt('Enter a description for this location:');
         const imageUrl = prompt('Optional: Enter an image URL to include:');
-        const popupContent = `<strong>${type === 'repair' ? 'Repair Site' : 'Needs Repair'}</strong><br>${description}<br>$
-          {imageUrl ? `<img src="${imageUrl}" alt="User submitted" style="width: 100%; margin-top: 8px; border-radius: 8px;" />` : ''}`;
+        const popupContent = `<strong>${type === 'repair' ? 'Repair Site' : 'Needs Repair'}</strong><br>${description}<br>${
+          imageUrl ? `<img src="${imageUrl}" alt="User submitted" style="width: 100%; margin-top: 8px; border-radius: 8px;" />` : ''}`;
 
         const marker = L.marker(e.latlng, {
           icon: type === 'repair' ? repairIcon : brokenIcon
