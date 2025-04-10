@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
   <title>Crowdsourced Repair Map</title>
@@ -169,7 +170,7 @@
 
     map.on('click', function(e) {
       tempLatLng = e.latlng;
-      const popupContent = 
+      const popupContent = `
         <div class="custom-popup">
           <label>Title:<br><input type="text" id="title"></label><br>
           <label>Description:<br><textarea id="desc"></textarea></label><br>
@@ -183,7 +184,7 @@
           </label><br>
           <button onclick="saveMarker()">Save</button>
         </div>
-      ;
+      `;
       L.popup()
         .setLatLng(e.latlng)
         .setContent(popupContent)
@@ -212,7 +213,7 @@
     }
 
     function addMarkerToMap(data) {
-      const content = <strong>${data.title}</strong><br>${data.desc}<br>${data.img ? '<img src="' + data.img + '" width="200">' : ''};
+      const content = `<strong>${data.title}</strong><br>${data.desc}<br>${data.img ? '<img src="' + data.img + '" width="200">' : ''}`;
       const marker = L.marker([data.lat, data.lng], { icon: customIcon }).bindPopup(content);
       if (data.type === 'repair') {
         repairLayer.addLayer(marker);
