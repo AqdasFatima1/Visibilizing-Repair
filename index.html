@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crowdsourced Repair Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha512-sA+z0ymnZKfJfowhA0nXIoI1IYAYZRxUrfBzWO6CXGpmM2fivZl4I1J7m5Q/wm9FhtwAeG6Ec5zfI1kLTOzJkQ==" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha512-vzZm7EJvGlnIRZBjwZrFb5IabzD/zPH+l3rGObdP5C5HRpEo61WUYf2cvFtK8uFEt4On3nW8Co1QQ4Wf3N0Z0w==" crossorigin=""></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     body {
@@ -102,11 +102,18 @@
       fetch('https://repair-map-data.firebaseio.com/markers.json')
         .then(response => response.json())
         .then(data => {
-          for (let key in data) {
-            const marker = data[key];
-            const layer = marker.type === 'repair' ? repairPlaces : repairNeeds;
-            L.marker([marker.lat, marker.lng]).addTo(layer).bindPopup(`<b>${marker.title}</b><br>${marker.description}`);
+          if (data) {
+            for (let key in data) {
+              const marker = data[key];
+              const layer = marker.type === 'repair' ? repairPlaces : repairNeeds;
+              L.marker([marker.lat, marker.lng]).addTo(layer).bindPopup(`<b>${marker.title}</b><br>${marker.description}`);
+            }
+          } else {
+            console.error('No data available');
           }
+        })
+        .catch(error => {
+          console.error('Error loading markers:', error);
         });
     }
 
