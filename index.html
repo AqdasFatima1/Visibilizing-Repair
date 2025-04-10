@@ -1,210 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Repair Map NYC</title>
-
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- GeoSearch CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.7.0/dist/geosearch.css" />
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crowdsourced Repair Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha512-sA+z0ymnZKfJfowhA0nXIoI1IYAYZRxUrfBzWO6CXGpmM2fivZl4I1J7m5Q/wm9FhtwAeG6Ec5zfI1kLTOzJkQ==" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha512-vzZm7EJvGlnIRZBjwZrFb5IabzD/zPH+l3rGObdP5C5HRpEo61WUYf2cvFtK8uFEt4On3nW8Co1QQ4Wf3N0Z0w==" crossorigin=""></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
-    body, html {
+    body {
       margin: 0;
-      padding: 0;
-      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background-color: #fef9f5;
+      color: #333;
+    }
+
+    #title {
+      padding: 1rem 2rem;
+      background-color: #ffe0d1;
+      color: #2e2e2e;
+      border-bottom: 3px solid #e9b26f;
+      border-radius: 0 0 1rem 1rem;
     }
 
     #map {
-      height: 100vh;
-      width: 100%;
+      height: calc(100vh - 120px);
+      border-radius: 1rem;
+      margin: 1rem;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 1rem;
+      font-size: 1rem;
+    }
+
+    .leaflet-popup-content {
+      max-height: 200px;
+      overflow-y: auto;
     }
 
     .leaflet-control-layers {
-      background: white;
-      padding: 10px;
-      font-size: 14px;
+      border-radius: 1rem;
+      background-color: #fffaf5 !important;
     }
 
-    .custom-popup input, .custom-popup textarea, .custom-popup select {
-      width: 100%;
-      margin-top: 5px;
-      margin-bottom: 10px;
+    .leaflet-control-zoom, .leaflet-control-layers-toggle {
+      border-radius: 0.5rem;
     }
 
-    .custom-popup button {
-      padding: 6px 12px;
-      cursor: pointer;
+    .leaflet-bar a {
+      background-color: #e9b26f;
+      color: white;
     }
 
-    .custom-icon {
-      background-color: #e4572e;
-      border-radius: 50%;
-      width: 16px;
-      height: 16px;
-      display: block;
+    .leaflet-bar a:hover {
+      background-color: #f19c6e;
     }
   </style>
 </head>
+
 <body>
+  <div id="title">
+    <h1>Crowdsourced Repair Map</h1>
+    <p>Help us build a map of places where people go to get things repaired — and places that need repair — by adding a marker to the appropriate layer.</p>
+  </div>
   <div id="map"></div>
 
-  <!-- Firebase & Firestore -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-  <!-- Leaflet & GeoSearch -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-geosearch@3.7.0/dist/bundle.min.js"></script>
-
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
-      authDomain: "repair-map-50701.firebaseapp.com",
-      projectId: "repair-map-50701",
-      storageBucket: "repair-map-50701.appspot.com",
-      messagingSenderId: "42233664095",
-      appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
-      measurementId: "G-11VNZY8QLX"
-    };
+    const map = L.map('map').setView([40.7128, -74.006], 12);
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    const map = L.map('map').setView([40.7128, -74.0060], 11);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors & CartoDB',
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
 
-    // GeoSearch Control
-    window.addEventListener('load', function () {
-      if (typeof GeoSearch !== 'undefined' && GeoSearch.OpenStreetMapProvider) {
-        const provider = new GeoSearch.OpenStreetMapProvider();
-        const searchControl = new GeoSearch.GeoSearchControl({
-          provider: provider,
-          style: 'bar',
-          showMarker: true,
-          retainZoomLevel: false,
-          autoClose: true,
-          searchLabel: 'Search for a place'
-        });
-        map.addControl(searchControl);
-      } else {
-        console.error("GeoSearch or OpenStreetMapProvider is not loaded correctly");
-      }
-    });
+    const repairPlaces = L.layerGroup().addTo(map);
+    const repairNeeds = L.layerGroup().addTo(map);
 
-    const repairLayer = L.layerGroup().addTo(map);
-    const needsRepairLayer = L.layerGroup().addTo(map);
-
-    const layers = {
-      "🛠 Where People Go for Repairs": repairLayer,
-      "🚧 Infrastructure Needing Repair": needsRepairLayer
+    const baseMaps = {};
+    const overlayMaps = {
+      "Places for Repair": repairPlaces,
+      "Places Needing Repair": repairNeeds
     };
 
-    L.control.layers(null, layers, { position: 'topright', collapsed: false }).addTo(map);
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
 
-    const customIcon = new L.DivIcon({
-      className: 'custom-icon',
-      iconSize: [20, 20]
-    });
+    // Fix flicker on zoom controls
+    map.zoomControl.setPosition('topright');
+
+    function saveMarker(data) {
+      fetch('https://repair-map-data.firebaseio.com/markers.json', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    function loadMarkers() {
+      fetch('https://repair-map-data.firebaseio.com/markers.json')
+        .then(response => response.json())
+        .then(data => {
+          for (let key in data) {
+            const marker = data[key];
+            const layer = marker.type === 'repair' ? repairPlaces : repairNeeds;
+            L.marker([marker.lat, marker.lng]).addTo(layer).bindPopup(`<b>${marker.title}</b><br>${marker.description}`);
+          }
+        });
+    }
 
     map.on('click', function (e) {
-      const markerId = `marker-${Date.now()}`;
-      const popupContent = document.createElement('div');
-      popupContent.className = 'custom-popup';
-      popupContent.innerHTML = `
-        <label>Title:<br><input type="text" id="${markerId}-title"></label><br>
-        <label>Description:<br><textarea id="${markerId}-desc"></textarea></label><br>
-        <label>Image URL:<br><input type="text" id="${markerId}-img"></label><br>
-        <label>
-          Layer:<br>
-          <select id="${markerId}-layer">
-            <option value="repair">Where People Go for Repairs</option>
-            <option value="needs">Infrastructure Needing Repair</option>
-          </select>
-        </label><br>
-        <button id="${markerId}-save">Save</button>
-      `;
+      const type = confirm("Click OK if this is a place FOR repair, or Cancel if this is a place NEEDING repair.") ? 'repair' : 'need';
+      const title = prompt("Enter a title for this marker:");
+      const description = prompt("Enter a description:");
 
-      const popup = L.popup()
-        .setLatLng(e.latlng)
-        .setContent(popupContent)
-        .openOn(map);
+      if (title && description) {
+        const marker = L.marker([e.latlng.lat, e.latlng.lng]);
+        const popupContent = `<b>${title}</b><br>${description}`;
 
-      document.getElementById(`${markerId}-save`).addEventListener('click', () => {
-        saveMarker(e.latlng, markerId);
-      });
-    });
+        if (type === 'repair') {
+          marker.addTo(repairPlaces);
+        } else {
+          marker.addTo(repairNeeds);
+        }
 
-    function sanitizeURL(url) {
-      try {
-        const parsed = new URL(url);
-        return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
-      } catch {
-        return '';
+        marker.bindPopup(popupContent);
+
+        saveMarker({ lat: e.latlng.lat, lng: e.latlng.lng, title, description, type });
       }
-    }
-
-    function saveMarker(latlng, markerId) {
-      const title = document.getElementById(`${markerId}-title`).value.trim();
-      const desc = document.getElementById(`${markerId}-desc`).value.trim();
-      const img = document.getElementById(`${markerId}-img`).value.trim();
-      const layerType = document.getElementById(`${markerId}-layer`).value;
-
-      if (!title) return alert("Title is required");
-
-      const data = {
-        lat: latlng.lat,
-        lng: latlng.lng,
-        title,
-        desc,
-        img,
-        type: layerType
-      };
-
-      db.collection("markers").add(data).then(() => {
-        addMarkerToMap(data);
-        map.closePopup();
-      });
-    }
-
-    function addMarkerToMap(data) {
-      const safeImg = sanitizeURL(data.img);
-      const content = `<strong>${data.title}</strong><br>${data.desc}${safeImg ? `<br><img src="${safeImg}" width="200">` : ''}`;
-      const marker = L.marker([data.lat, data.lng], { icon: customIcon }).bindPopup(content);
-
-      if (data.type === 'repair') {
-        repairLayer.addLayer(marker);
-      } else {
-        needsRepairLayer.addLayer(marker);
-      }
-    }
-
-    db.collection("markers").get().then(querySnapshot => {
-      querySnapshot.forEach(doc => {
-        addMarkerToMap(doc.data());
-      });
     });
 
-    // Load borough boundaries GeoJSON
-    map.whenReady(() => {
-      fetch('boroughs.geojson')
-        .then(res => res.json())
-        .then(data => {
-          L.geoJSON(data, {
-            style: {
-              color: '#6fa76b',
-              weight: 2,
-              fillOpacity: 0.07
-            }
-          }).addTo(map);
-        }).catch(err => console.error("GeoJSON load error:", err));
-    });
+    loadMarkers();
   </script>
 </body>
+
 </html>
