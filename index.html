@@ -14,19 +14,21 @@
       margin: 0;
       font-family: 'Inter', sans-serif;
       background-color: #f4f1ec;
+      color: #333;
     }
     #map {
       height: 100vh;
       width: 100%;
+      z-index: 1;
     }
     .leaflet-popup-content {
-      width: 250px !important;
+      width: 300px !important;
       font-size: 14px;
     }
     .custom-popup {
       font-family: 'Inter', sans-serif;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
       color: #333;
     }
     .leaflet-control-layers label {
@@ -35,55 +37,84 @@
     }
     .search-bar {
       position: absolute;
-      top: 10px;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
       background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 10px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
       font-family: 'Inter', sans-serif;
+    }
+    .title-container {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #fff;
+      padding: 15px 20px;
+      border-radius: 12px;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      max-width: 300px;
+    }
+    .title-container h1 {
+      font-size: 20px;
+      margin: 0 0 5px;
+      color: #444;
+    }
+    .title-container p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <div class="search-bar">
-    <input type="text" id="search" placeholder="Search location...">
+  <div class="title-container">
+    <h1>Repair Map NYC</h1>
+    <p>Explore community repair sites and infrastructure needing care in the city.</p>
   </div>
+
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="Search address...">
+    <button onclick="searchLocation()">Search</button>
+  </div>
+
   <div id="map"></div>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js"></script>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
   <script>
-    // ✅ Your fixed Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
       authDomain: "repair-map-50701.firebaseapp.com",
       projectId: "repair-map-50701",
-      storageBucket: "repair-map-50701.appspot.com", // ✅ corrected
+      storageBucket: "repair-map-50701.firebasestorage.app",
       messagingSenderId: "42233664095",
       appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
       measurementId: "G-11VNZY8QLX"
     };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Initialize map
     const map = L.map('map').setView([40.7128, -74.0060], 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const repairLayer = L.layerGroup();
+    const issueLayer = L.layerGroup();
+
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // Custom icon
     const repairIcon = L.icon({
       iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png',
       iconSize: [28, 28],
@@ -91,37 +122,69 @@
       popupAnchor: [0, -28]
     });
 
-    // Load existing markers from Firestore
+    const issueIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/5953/5953939.png',
+      iconSize: [28, 28],
+      iconAnchor: [14, 28],
+      popupAnchor: [0, -28]
+    });
+
     db.collection("markers").get().then(querySnapshot => {
       querySnapshot.forEach(doc => {
         const data = doc.data();
-        L.marker([data.lat, data.lng], { icon: repairIcon })
-          .addTo(map)
-          .bindPopup(`<div class='custom-popup'><strong>${data.title}</strong><br>${data.description}</div>`);
+        const marker = L.marker([data.lat, data.lng], { icon: data.type === "repair" ? repairIcon : issueIcon })
+          .bindPopup(`<div class='custom-popup'><strong>${data.title}</strong><br>${data.description}<br><img src='${data.image || ''}' alt='' style='width:100%;margin-top:10px;'></div>`);
+        if (data.type === "repair") {
+          marker.addTo(repairLayer);
+        } else {
+          marker.addTo(issueLayer);
+        }
       });
-    }).catch(error => {
-      console.error("Error getting markers:", error);
+      repairLayer.addTo(map);
     });
 
-    // Add marker on map click
+    L.control.layers(null, {
+      'Repair Sites': repairLayer,
+      'Needs Repair': issueLayer
+    }).addTo(map);
+
     map.on('click', function(e) {
-      const title = prompt("Enter title for this marker:");
+      const title = prompt("Enter title:");
       const description = prompt("Enter description:");
-      if (title && description) {
-        const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: repairIcon }).addTo(map);
-        marker.bindPopup(`<div class='custom-popup'><strong>${title}</strong><br>${description}</div>`).openPopup();
+      const image = prompt("Enter image URL (optional):");
+      const type = prompt("Type 'repair' or 'issue' to categorize:");
+      if (title && description && (type === 'repair' || type === 'issue')) {
+        const icon = type === 'repair' ? repairIcon : issueIcon;
+        const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon }).addTo(type === 'repair' ? repairLayer : issueLayer);
+        marker.bindPopup(`<div class='custom-popup'><strong>${title}</strong><br>${description}<br><img src='${image || ''}' alt='' style='width:100%;margin-top:10px;'></div>`).openPopup();
+
         db.collection("markers").add({
           title,
           description,
+          image: image || '',
           lat: e.latlng.lat,
-          lng: e.latlng.lng
-        }).then(() => {
-          console.log("Marker successfully added!");
-        }).catch(error => {
-          console.error("Error adding marker:", error);
+          lng: e.latlng.lng,
+          type
         });
       }
     });
+
+    function searchLocation() {
+      const query = document.getElementById("search").value;
+      if (query) {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data && data.length > 0) {
+              const lat = parseFloat(data[0].lat);
+              const lon = parseFloat(data[0].lon);
+              map.setView([lat, lon], 15);
+            } else {
+              alert("Location not found.");
+            }
+          });
+      }
+    }
   </script>
 </body>
 </html>
