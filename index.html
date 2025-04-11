@@ -12,11 +12,13 @@
       font-family: 'Inter', sans-serif;
       background-color: #f4f1ec;
     }
+
     #map {
       height: 100vh;
       width: 100%;
       z-index: 0;
     }
+
     .title-box {
       position: absolute;
       top: 10px;
@@ -28,26 +30,39 @@
       z-index: 1000;
       max-width: 300px;
     }
+
     .title-box h2 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
       color: #5a5a5a;
     }
+
     .title-box p {
       margin: 8px 0 0;
       font-size: 14px;
       color: #777;
     }
+
     .leaflet-popup-content {
-      font-family: 'Urbanist', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-size: 14px;
       width: 260px !important;
     }
+
     .custom-popup {
       color: #333;
       font-size: 14px;
     }
+
+    .custom-popup img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: cover;
+      margin-top: 6px;
+      border-radius: 6px;
+    }
+
     .search-bar {
       position: absolute;
       top: 10px;
@@ -60,11 +75,27 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       width: 300px;
     }
+
     .search-bar input {
       width: 100%;
-      padding: 6px;
+      padding: 8px;
       border: 1px solid #ccc;
       border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline-color: #888;
+    }
+
+    @media (max-width: 600px) {
+      .title-box {
+        font-size: 12px;
+        padding: 10px;
+        max-width: 90%;
+      }
+
+      .search-bar {
+        width: 90%;
+      }
     }
   </style>
 </head>
@@ -72,12 +103,14 @@
   <div class="title-box">
     <h2>Repair Stories</h2>
     <p>This map collects data on repair practices and infrastructure in need of care.<br>
-      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!.<br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one.<br>
       Use the toggle to view either where repair happens or where it's needed.</p>
   </div>
+
   <div class="search-bar">
     <input type="text" id="search" placeholder="Search address..." />
   </div>
+
   <div id="map"></div>
 
   <!-- Firebase Compat SDK -->
@@ -131,7 +164,7 @@
         const popupContent = `
           <div class='custom-popup'>
             <strong>${data.title}</strong><br>${data.description}
-            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
+            ${data.image ? `<br><img src="${data.image}" alt="marker image" />` : ""}
           </div>`;
         const marker = L.marker([data.lat, data.lng], { icon })
           .bindPopup(popupContent);
@@ -156,36 +189,38 @@
       if (type !== 'repair' && type !== 'need') return;
 
       const title = prompt("Enter title for this marker:");
+      if (!title) return;
+
       const description = prompt("Enter description:");
+      if (!description) return;
+
       const image = prompt("Optional: paste an image URL");
 
-      if (title && description) {
-        const icon = type === "repair" ? repairIcon : needRepairIcon;
-        const popupContent = `
-          <div class='custom-popup'>
-            <strong>${title}</strong><br>${description}
-            ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-          </div>`;
-        const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon })
-          .bindPopup(popupContent)
-          .addTo(type === "repair" ? repairLayer : needRepairLayer)
-          .openPopup();
+      const icon = type === "repair" ? repairIcon : needRepairIcon;
+      const popupContent = `
+        <div class='custom-popup'>
+          <strong>${title}</strong><br>${description}
+          ${image ? `<br><img src="${image}" alt="user image" />` : ""}
+        </div>`;
+      const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon })
+        .bindPopup(popupContent)
+        .addTo(type === "repair" ? repairLayer : needRepairLayer)
+        .openPopup();
 
-        db.collection("markers").add({
-          type: type === "repair" ? "repair" : "need",
-          title,
-          description,
-          image: image || null,
-          lat: e.latlng.lat,
-          lng: e.latlng.lng
-        });
-      }
+      db.collection("markers").add({
+        type: type === "repair" ? "repair" : "need",
+        title,
+        description,
+        image: image || null,
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+      });
     });
 
     document.getElementById('search').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         const query = this.value;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
           .then(res => res.json())
           .then(data => {
             if (data.length > 0) {
