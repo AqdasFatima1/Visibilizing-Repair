@@ -5,20 +5,18 @@
   <title>Repair Map NYC</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Urbanist', sans-serif;
       background-color: #f4f1ec;
     }
-
     #map {
       height: 100vh;
       width: 100%;
       z-index: 0;
     }
-
     .title-box {
       position: absolute;
       top: 10px;
@@ -30,39 +28,24 @@
       z-index: 1000;
       max-width: 300px;
     }
-
     .title-box h2 {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
       color: #5a5a5a;
     }
-
     .title-box p {
       margin: 8px 0 0;
       font-size: 14px;
       color: #777;
     }
-
     .leaflet-popup-content {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Urbanist', sans-serif;
       font-size: 14px;
-      width: 260px !important;
     }
-
     .custom-popup {
       color: #333;
-      font-size: 14px;
     }
-
-    .custom-popup img {
-      width: 100%;
-      max-height: 180px;
-      object-fit: cover;
-      margin-top: 6px;
-      border-radius: 6px;
-    }
-
     .search-bar {
       position: absolute;
       top: 10px;
@@ -75,27 +58,19 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       width: 300px;
     }
-
     .search-bar input {
       width: 100%;
-      padding: 8px;
+      padding: 6px;
       border: 1px solid #ccc;
       border-radius: 6px;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      outline-color: #888;
     }
-
-    @media (max-width: 600px) {
-      .title-box {
-        font-size: 12px;
-        padding: 10px;
-        max-width: 90%;
-      }
-
-      .search-bar {
-        width: 90%;
-      }
+    .leaflet-control-layers {
+      font-size: 14px;
+      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 8px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -103,21 +78,16 @@
   <div class="title-box">
     <h2>Repair Stories</h2>
     <p>This map collects data on repair practices and infrastructure in need of care.<br>
-      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one.<br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!.<br>
       Use the toggle to view either where repair happens or where it's needed.</p>
   </div>
-
   <div class="search-bar">
     <input type="text" id="search" placeholder="Search address..." />
   </div>
-
   <div id="map"></div>
 
-  <!-- Firebase Compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
-  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
   <script>
@@ -136,22 +106,15 @@
 
     const map = L.map('map').setView([40.7128, -74.0060], 12);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap & CartoDB contributors',
     }).addTo(map);
 
-    const repairIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png',
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
-      popupAnchor: [0, -28]
-    });
-
-    const needRepairIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/1828/1828843.png',
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
-      popupAnchor: [0, -28]
+    const neutralIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png', // wrench-like icon
+      iconSize: [26, 26],
+      iconAnchor: [13, 26],
+      popupAnchor: [0, -26]
     });
 
     const repairLayer = L.layerGroup().addTo(map);
@@ -160,13 +123,12 @@
     db.collection("markers").get().then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
-        const icon = data.type === "repair" ? repairIcon : needRepairIcon;
         const popupContent = `
           <div class='custom-popup'>
             <strong>${data.title}</strong><br>${data.description}
-            ${data.image ? `<br><img src="${data.image}" alt="marker image" />` : ""}
+            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
           </div>`;
-        const marker = L.marker([data.lat, data.lng], { icon })
+        const marker = L.marker([data.lat, data.lng], { icon: neutralIcon })
           .bindPopup(popupContent);
 
         if (data.type === "repair") {
@@ -178,49 +140,69 @@
     });
 
     const baseMaps = {
-      "Repair Sites": repairLayer,
-      "Needs Repair": needRepairLayer
+      "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
+      "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer
     };
 
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
 
     map.on('click', function (e) {
-      const type = prompt("Type 'repair' to mark a repair site or 'need' to mark a location needing repair:");
-      if (type !== 'repair' && type !== 'need') return;
+      const formPopup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent(`
+          <div style="font-family: Urbanist, sans-serif; font-size: 14px;">
+            <label>Type: 
+              <select id="marker-type">
+                <option value="repair">Repair</option>
+                <option value="need">Needs Repair</option>
+              </select>
+            </label><br><br>
+            <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
+            <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
+            <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
+            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
+          </div>
+        `)
+        .openOn(map);
+    });
 
-      const title = prompt("Enter title for this marker:");
-      if (!title) return;
+    function submitMarker(lat, lng) {
+      const type = document.getElementById('marker-type').value;
+      const title = document.getElementById('marker-title').value;
+      const description = document.getElementById('marker-description').value;
+      const image = document.getElementById('marker-image').value;
 
-      const description = prompt("Enter description:");
-      if (!description) return;
+      if (!title || !description) {
+        alert("Please enter both a title and description.");
+        return;
+      }
 
-      const image = prompt("Optional: paste an image URL");
-
-      const icon = type === "repair" ? repairIcon : needRepairIcon;
       const popupContent = `
         <div class='custom-popup'>
           <strong>${title}</strong><br>${description}
-          ${image ? `<br><img src="${image}" alt="user image" />` : ""}
+          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
         </div>`;
-      const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon })
+      const marker = L.marker([lat, lng], { icon: neutralIcon })
         .bindPopup(popupContent)
         .addTo(type === "repair" ? repairLayer : needRepairLayer)
         .openPopup();
 
       db.collection("markers").add({
-        type: type === "repair" ? "repair" : "need",
+        type,
         title,
         description,
         image: image || null,
-        lat: e.latlng.lat,
-        lng: e.latlng.lng
+        lat,
+        lng
       });
-    });
+
+      map.closePopup();
+    }
 
     document.getElementById('search').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         const query = this.value;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
           .then(res => res.json())
           .then(data => {
             if (data.length > 0) {
