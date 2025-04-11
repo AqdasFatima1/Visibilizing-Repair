@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>Repair Map NYC</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
@@ -53,31 +53,37 @@
   </div>
   <div id="map"></div>
 
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
-  <!-- Firebase App + Firestore (MODULAR SDK) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-
+  <script>
+    // ✅ Your fixed Firebase config
     const firebaseConfig = {
-      apiKey: "REPLACE_THIS",
-      authDomain: "REPLACE_THIS",
-      projectId: "REPLACE_THIS",
-      storageBucket: "REPLACE_THIS",
-      messagingSenderId: "REPLACE_THIS",
-      appId: "REPLACE_THIS"
+      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
+      authDomain: "repair-map-50701.firebaseapp.com",
+      projectId: "repair-map-50701",
+      storageBucket: "repair-map-50701.appspot.com", // ✅ corrected
+      messagingSenderId: "42233664095",
+      appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
+      measurementId: "G-11VNZY8QLX"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
+    // Initialize map
     const map = L.map('map').setView([40.7128, -74.0060], 12);
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
+    // Custom icon
     const repairIcon = L.icon({
       iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png',
       iconSize: [28, 28],
@@ -85,28 +91,34 @@
       popupAnchor: [0, -28]
     });
 
-    // Load markers
-    const markersRef = collection(db, "markers");
-    const querySnapshot = await getDocs(markersRef);
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      L.marker([data.lat, data.lng], { icon: repairIcon })
-        .addTo(map)
-        .bindPopup(`<div class='custom-popup'><strong>${data.title}</strong><br>${data.description}</div>`);
+    // Load existing markers from Firestore
+    db.collection("markers").get().then(querySnapshot => {
+      querySnapshot.forEach(doc => {
+        const data = doc.data();
+        L.marker([data.lat, data.lng], { icon: repairIcon })
+          .addTo(map)
+          .bindPopup(`<div class='custom-popup'><strong>${data.title}</strong><br>${data.description}</div>`);
+      });
+    }).catch(error => {
+      console.error("Error getting markers:", error);
     });
 
-    // Add marker on click
-    map.on('click', async (e) => {
+    // Add marker on map click
+    map.on('click', function(e) {
       const title = prompt("Enter title for this marker:");
       const description = prompt("Enter description:");
       if (title && description) {
         const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: repairIcon }).addTo(map);
         marker.bindPopup(`<div class='custom-popup'><strong>${title}</strong><br>${description}</div>`).openPopup();
-        await addDoc(markersRef, {
+        db.collection("markers").add({
           title,
           description,
           lat: e.latlng.lat,
           lng: e.latlng.lng
+        }).then(() => {
+          console.log("Marker successfully added!");
+        }).catch(error => {
+          console.error("Error adding marker:", error);
         });
       }
     });
