@@ -54,8 +54,61 @@
   <div id="map"></div>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  const map = L.map('map').setView([40.7128, -74.0060], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const repairIcon = L.icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png',
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28]
+  });
+
+  // Load existing markers
+  const markersRef = collection(db, "markers");
+  const querySnapshot = await getDocs(markersRef);
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    L.marker([data.lat, data.lng], { icon: repairIcon })
+      .addTo(map)
+      .bindPopup(`<div class='custom-popup'><strong>${data.title}</strong><br>${data.description}</div>`);
+  });
+
+  // Add marker on click
+  map.on('click', async (e) => {
+    const title = prompt("Enter title for this marker:");
+    const description = prompt("Enter description:");
+    if (title && description) {
+      const marker = L.marker([e.latlng.lat, e.latlng.lng], { icon: repairIcon }).addTo(map);
+      marker.bindPopup(`<div class='custom-popup'><strong>${title}</strong><br>${description}</div>`).openPopup();
+      await addDoc(markersRef, {
+        title,
+        description,
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+      });
+    }
+  });
+</script>
+
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
