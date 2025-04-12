@@ -100,24 +100,16 @@
     }).addTo(map);
 
     // Pushpin-style icon for repairs happening (green)
-    const repairIcon = L.divIcon({
-      className: 'leaflet-pushpin-repair',
-      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <path d="M16 2 L14 4 L18 4 Z" fill="#28a745"/>
-              <circle cx="16" cy="16" r="14" stroke="#28a745" stroke-width="3" fill="#28a745"/>
-            </svg>`,
+    const repairIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Map_marker_green.svg/512px-Map_marker_green.svg.png',
       iconSize: [32, 48],
       iconAnchor: [16, 48], // Point to the bottom center of the pin
       popupAnchor: [0, -30]
     });
 
     // Pushpin-style icon for repairs needed (orange)
-    const needRepairIcon = L.divIcon({
-      className: 'leaflet-pushpin-need',
-      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <path d="M16 2 L14 4 L18 4 Z" fill="#fd7e14"/>
-              <circle cx="16" cy="16" r="14" stroke="#fd7e14" stroke-width="3" fill="#fd7e14"/>
-            </svg>`,
+    const needRepairIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Map_marker_orange.svg/512px-Map_marker_orange.svg.png',
       iconSize: [32, 48],
       iconAnchor: [16, 48], // Point to the bottom center of the pin
       popupAnchor: [0, -30]
