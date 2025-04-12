@@ -213,8 +213,8 @@
       });
     }
 
-    // Add geocoder control for searching addresses
-    L.Control.Geocoder.nominatim().addTo(map);
+    // Correct way to add the geocoder control
+    L.Control.geocoder().addTo(map);
 
   </script>
 </body>
