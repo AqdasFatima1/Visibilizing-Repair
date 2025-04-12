@@ -213,8 +213,12 @@
       });
     }
 
-    // Correct way to add the geocoder control
-    L.Control.geocoder().addTo(map);
+    // Initialize geocoder search bar
+    L.Control.geocoder({
+      position: 'topleft',
+      placeholder: 'Search for places',
+      collapseOnBlur: true
+    }).addTo(map);
 
   </script>
 </body>
