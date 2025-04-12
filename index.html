@@ -49,8 +49,8 @@
       color: #333;
     }
     .leaflet-control-geocoder,
-    .leaflet-control-layers {
-      z-index: 1000;
+    .leaflet-control-geosearch {
+      z-index: 2000;
     }
     .leaflet-control-layers {
       font-size: 16px;
@@ -60,8 +60,28 @@
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    .leaflet-control-layers label {
+    .leaflet-control-layers label,
+    .leaflet-control-layers span {
       font-family: 'Urbanist', sans-serif;
+      color: black;
+    }
+    .search-bar-container {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+      width: 90%;
+      max-width: 500px;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background-color: #fff;
     }
   </style>
 </head>
@@ -73,33 +93,37 @@
       Use the toggle to view either where repair happens or where it's needed, or both together.</p>
   </div>
 
+  <div class="search-bar-container">
+    <div class="leaflet-control geosearch"></div>
+  </div>
+
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.js"></script>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
-      authDomain: "repair-map-50701.firebaseapp.com",
-      projectId: "repair-map-50701",
-      storageBucket: "repair-map-50701.appspot.com",
-      messagingSenderId: "42233664095",
-      appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
-      measurementId: "G-11VNZY8QLX"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
     const map = L.map('map').setView([40.7128, -74.0060], 12);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap & CartoDB contributors',
       className: 'leaflet-warm-toned',
     }).addTo(map);
+
+    const provider = new window.GeoSearch.OpenStreetMapProvider();
+
+    const search = new window.GeoSearch.GeoSearchControl({
+      provider: provider,
+      style: 'bar',
+      showMarker: true,
+      showPopup: false,
+      autoClose: true,
+      retainZoomLevel: false,
+      searchLabel: 'Search for a place',
+      keepResult: true
+    });
+
+    map.addControl(search);
 
     const greenIcon = new L.Icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
@@ -122,80 +146,10 @@
     const repairLayer = L.layerGroup().addTo(map);
     const needRepairLayer = L.layerGroup().addTo(map);
 
-    db.collection("markers").get().then(snapshot => {
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const popupContent =
-          `<div class='custom-popup'>
-            <strong>${data.title}</strong><br>${data.description}
-            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-          </div>`;
-
-        const icon = data.type === "repair" ? greenIcon : orangeIcon;
-        const marker = L.marker([data.lat, data.lng], { icon }).bindPopup(popupContent);
-
-        if (data.type === "repair") {
-          marker.addTo(repairLayer);
-        } else {
-          marker.addTo(needRepairLayer);
-        }
-      });
-    });
-
     L.control.layers({
-      "<span style='color:#28a745;'>Repairs are Happening</span>": repairLayer,
-      "<span style='color:#fd7e14;'>Repairs are Needed</span>": needRepairLayer
+      "<span>Something is being Repaired Here!</span>": repairLayer,
+      "<span>Something Needs Repair Here!</span>": needRepairLayer
     }, null, { collapsed: false }).addTo(map);
-
-    map.on('click', function (e) {
-      const formPopup = L.popup()
-        .setLatLng(e.latlng)
-        .setContent(
-          `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
-            <label>Type: 
-              <select id="marker-type">
-                <option value="repair">Repairs are Happening</option>
-                <option value="need">Repairs are Needed</option>
-              </select>
-            </label><br><br>
-            <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
-            <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
-            <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
-            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
-          </div>`
-        )
-        .openOn(map);
-    });
-
-    function submitMarker(lat, lng) {
-      const type = document.getElementById('marker-type').value;
-      const title = document.getElementById('marker-title').value;
-      const description = document.getElementById('marker-description').value;
-      const image = document.getElementById('marker-image').value;
-
-      db.collection("markers").add({
-        type, title, description, image, lat, lng
-      }).then(() => location.reload());
-    }
-
-    // Add geosearch control with OpenStreetMap provider
-    const provider = new GeoSearch.OpenStreetMapProvider();
-    const search = new GeoSearch.GeoSearchControl({
-      provider: provider,
-      style: 'bar',
-      showMarker: true,
-      marker: {
-        icon: new L.Icon.Default(),
-        draggable: false,
-      },
-      showPopup: false,
-      retainZoomLevel: false,
-      animateZoom: true,
-      autoClose: true,
-      searchLabel: 'Search for a place',
-      keepResult: false
-    });
-    map.addControl(search);
   </script>
 </body>
 </html>
