@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Repair Map NYC</title>
+  <title>Repair Stories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
@@ -128,8 +128,8 @@
     });
 
     const baseMaps = {
-      "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
-      "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer,
+      "<span style='color:#444'>Repairs are Happening Here!</span>": repairLayer,
+      "<span style='color:#444'>Repairs are Needed Here!</span>": needRepairLayer,
       "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map)
     };
 
@@ -142,8 +142,8 @@
           `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
             <label>Type: 
               <select id="marker-type">
-                <option value="repair">Repair</option>
-                <option value="need">Needs Repair</option>
+                <option value="repair">Repairs are Happening</option>
+                <option value="need">Repairs are Needed</option>
               </select>
             </label><br><br>
             <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
