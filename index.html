@@ -87,10 +87,6 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Adding overlay for the tinge effect
-    const tingeOverlay = L.DomUtil.create('div', 'tinge-overlay');
-    map.getPanes().overlayPane.appendChild(tingeOverlay);
-
     // Pushpin-style icon for repairs happening (green)
     const repairIcon = L.divIcon({
       className: 'leaflet-pushpin-repair',
@@ -190,24 +186,7 @@
 
     // Geocoding search control (integrated from OpenStreetMap)
     L.Control.geocoder({
-      defaultMarkGeocode: false,
-      geocoder: new L.Control.Geocoder.Nominatim({
-        geocode: function(query, cb, context) {
-          const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query);
-          fetch(url)
-            .then(response => response.json())
-            .then(data => {
-              const results = data.map(result => ({
-                name: result.display_name,
-                center: new L.LatLng(result.lat, result.lon)
-              }));
-              cb(results);
-            })
-            .catch(error => {
-              console.error("Error in geocoding:", error);
-            });
-        }
-      })
+      defaultMarkGeocode: true
     }).addTo(map);
   </script>
 </body>
