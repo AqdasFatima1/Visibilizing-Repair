@@ -98,11 +98,20 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    const neutralIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png',
+    const repairIcon = L.divIcon({
+      className: 'custom-icon',
+      html: '<div style="background-color: #28a745; border-radius: 50%; width: 24px; height: 24px;"></div>',
       iconSize: [24, 24],
-      iconAnchor: [12, 24],
-      popupAnchor: [0, -24]
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12]
+    });
+
+    const needRepairIcon = L.divIcon({
+      className: 'custom-icon',
+      html: '<div style="background-color: #fd7e14; border-radius: 50%; width: 24px; height: 24px;"></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12]
     });
 
     const repairLayer = L.layerGroup().addTo(map);
@@ -116,7 +125,9 @@
             <strong>${data.title}</strong><br>${data.description}
             ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
           </div>`;
-        const marker = L.marker([data.lat, data.lng], { icon: neutralIcon })
+        
+        const icon = data.type === "repair" ? repairIcon : needRepairIcon;
+        const marker = L.marker([data.lat, data.lng], { icon })
           .bindPopup(popupContent);
 
         if (data.type === "repair") {
@@ -128,8 +139,8 @@
     });
 
     const baseMaps = {
-      "<span style='color:#444'>Repairs are Happening Here!</span>": repairLayer,
-      "<span style='color:#444'>Repairs are Needed Here!</span>": needRepairLayer,
+      "<img src='https://via.placeholder.com/18/28a745/28a745?text=+' style='vertical-align:middle;margin-right:6px;'>Repairs are Happening Here": repairLayer,
+      "<img src='https://via.placeholder.com/18/fd7e14/fd7e14?text=+' style='vertical-align:middle;margin-right:6px;'>Repairs are Needed Here": needRepairLayer,
       "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map)
     };
 
@@ -171,7 +182,9 @@
           <strong>${title}</strong><br>${description}
           ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
         </div>`;
-      const marker = L.marker([lat, lng], { icon: neutralIcon })
+        
+      const icon = type === "repair" ? repairIcon : needRepairIcon;
+      const marker = L.marker([lat, lng], { icon })
         .bindPopup(popupContent)
         .addTo(type === "repair" ? repairLayer : needRepairLayer)
         .openPopup();
