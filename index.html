@@ -1,59 +1,234 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaflet Map with Pushpins</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <style>
-        #map {
-            height: 500px;
-        }
-        /* Overlay to add the tinge */
-        .leaflet-tile-container {
-            position: relative;
-        }
-        .leaflet-tile-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 165, 0, 0.2); /* Slight orange tint */
-            pointer-events: none;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Repair Stories</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Urbanist', sans-serif;
+      background-color: #f4f1ec;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+      z-index: 0;
+    }
+    .title-box {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      max-width: 300px;
+    }
+    .title-box h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: #5a5a5a;
+    }
+    .title-box p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: #777;
+    }
+    .leaflet-popup-content {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 14px;
+    }
+    .custom-popup {
+      color: #333;
+    }
+    .leaflet-control-geocoder {
+      z-index: 1000;
+    }
+    .leaflet-control-layers {
+      font-size: 16px;
+      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 8px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .leaflet-control-layers label {
+      font-family: 'Urbanist', sans-serif;
+    }
+    /* Orange/beige tinge overlay */
+    .tinge-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 153, 102, 0.15); /* Light orange/beige tinge */
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
 </head>
 <body>
+  <div class="title-box">
+    <h2>Repair Stories</h2>
+    <p>This map collects data on repair practices and infrastructure in need of care.<br><br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
+      Use the toggle to view either where repair happens or where it's needed, or both together.</p>
+  </div>
+  <div id="map"></div>
 
-<div id="map"></div>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-<script>
-    // Initialize the map
-    const map = L.map('map').setView([51.505, -0.09], 13);
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
+      authDomain: "repair-map-50701.firebaseapp.com",
+      projectId: "repair-map-50701",
+      storageBucket: "repair-map-50701.appspot.com",
+      messagingSenderId: "42233664095",
+      appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
+      measurementId: "G-11VNZY8QLX"
+    };
 
-    // Add a tile layer with a slight orange tint
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const map = L.map('map').setView([40.7128, -74.0060], 12);
+
+    // Tile layer with light beige/orange tinge
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap & CartoDB contributors',
+      className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Create custom icon (pushpin style)
-    const pushpinIcon = L.icon({
-        iconUrl: 'https://example.com/path/to/pushpin.svg', // Use the correct URL for the icon
-        iconSize: [32, 32], // Adjust size
-        iconAnchor: [16, 32], // Anchor the icon at the bottom center
-        popupAnchor: [0, -32] // Position popup above the icon
+    // Adding overlay for the tinge effect
+    const tingeOverlay = L.DomUtil.create('div', 'tinge-overlay');
+    map.getPanes().overlayPane.appendChild(tingeOverlay);
+
+    // Pushpin-style icon for repairs happening (green)
+    const repairIcon = L.divIcon({
+      className: 'leaflet-pushpin-repair',
+      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
+              <path d="M16 2 L14 4 L18 4 Z" fill="#28a745"/>
+              <circle cx="16" cy="16" r="14" stroke="#28a745" stroke-width="3" fill="#28a745"/>
+            </svg>`,
+      iconSize: [32, 48],
+      iconAnchor: [16, 48], // Point to the bottom center of the pin
+      popupAnchor: [0, -30]
     });
 
-    // Adding markers with the custom pushpin icon
-    L.marker([51.5, -0.09], { icon: pushpinIcon }).addTo(map)
-        .bindPopup('This is a pushpin marker!');
-    L.marker([51.495, -0.083], { icon: pushpinIcon }).addTo(map)
-        .bindPopup('Another pushpin marker!');
-</script>
+    // Pushpin-style icon for repairs needed (orange)
+    const needRepairIcon = L.divIcon({
+      className: 'leaflet-pushpin-need',
+      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
+              <path d="M16 2 L14 4 L18 4 Z" fill="#fd7e14"/>
+              <circle cx="16" cy="16" r="14" stroke="#fd7e14" stroke-width="3" fill="#fd7e14"/>
+            </svg>`,
+      iconSize: [32, 48],
+      iconAnchor: [16, 48], // Point to the bottom center of the pin
+      popupAnchor: [0, -30]
+    });
 
+    const repairLayer = L.layerGroup().addTo(map);
+    const needRepairLayer = L.layerGroup().addTo(map);
+
+    db.collection("markers").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const popupContent =
+          `<div class='custom-popup'>
+            <strong>${data.title}</strong><br>${data.description}
+            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
+          </div>`;
+        
+        const icon = data.type === "repair" ? repairIcon : needRepairIcon;
+        const marker = L.marker([data.lat, data.lng], { icon })
+          .bindPopup(popupContent);
+
+        if (data.type === "repair") {
+          marker.addTo(repairLayer);
+        } else {
+          marker.addTo(needRepairLayer);
+        }
+      });
+    });
+
+    const baseMaps = {
+      "<img src='https://via.placeholder.com/18/28a745/28a745?text=+' style='vertical-align:middle;margin-right:6px;'>Repairs are Happening Here": repairLayer,
+      "<img src='https://via.placeholder.com/18/fd7e14/fd7e14?text=+' style='vertical-align:middle;margin-right:6px;'>Repairs are Needed Here": needRepairLayer,
+      "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map)
+    };
+
+    L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+
+    map.on('click', function (e) {
+      const formPopup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent(
+          `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
+            <label>Type: 
+              <select id="marker-type">
+                <option value="repair">Repairs are Happening</option>
+                <option value="need">Repairs are Needed</option>
+              </select>
+            </label><br><br>
+            <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
+            <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
+            <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
+            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
+          </div>`
+        )
+        .openOn(map);
+    });
+
+    function submitMarker(lat, lng) {
+      const type = document.getElementById('marker-type').value;
+      const title = document.getElementById('marker-title').value;
+      const description = document.getElementById('marker-description').value;
+      const image = document.getElementById('marker-image').value;
+
+      if (!title || !description) {
+        alert("Please enter both a title and description.");
+        return;
+      }
+
+      const popupContent = 
+        `<div class='custom-popup'>
+          <strong>${title}</strong><br>${description}
+          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
+        </div>`;
+        
+      const icon = type === "repair" ? repairIcon : needRepairIcon;
+      const marker = L.marker([lat, lng], { icon })
+        .bindPopup(popupContent)
+        .addTo(type === "repair" ? repairLayer : needRepairLayer)
+        .openPopup();
+
+      db.collection("markers").add({
+        type,
+        title,
+        description,
+        image: image || null,
+        lat,
+        lng
+      });
+
+      map.closePopup();
+    }
+
+    // Add geocoder control
+    L.Control.geocoder({
+      defaultMarkGeocode: true
+    }).addTo(map);
+  </script>
 </body>
 </html>
