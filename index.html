@@ -193,7 +193,7 @@
       defaultMarkGeocode: false,
       geocoder: new L.Control.Geocoder.Nominatim({
         geocode: function(query, cb, context) {
-          const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + query;
+          const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query);
           fetch(url)
             .then(response => response.json())
             .then(data => {
@@ -202,6 +202,9 @@
                 center: new L.LatLng(result.lat, result.lon)
               }));
               cb(results);
+            })
+            .catch(error => {
+              console.error("Error in geocoding:", error);
             });
         }
       })
