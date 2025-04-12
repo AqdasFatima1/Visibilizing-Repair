@@ -58,13 +58,9 @@
       padding: 8px;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      position: absolute;
-      top: 10px;
-      right: 10px;
     }
     .leaflet-control-layers label {
       font-family: 'Urbanist', sans-serif;
-      color: #000; /* Ensures the text color is black */
     }
     /* Custom styles for the custom search bar */
     .search-bar-container {
@@ -84,6 +80,28 @@
       box-sizing: border-box;
       background-color: #fff;
     }
+    /* Styling for search results */
+    #search-results {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      background-color: white;
+      border: 1px solid #ccc;
+      position: absolute;
+      width: 100%;
+      display: none;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1001;
+    }
+    #search-results li {
+      padding: 8px;
+      cursor: pointer;
+      border-bottom: 1px solid #ddd;
+    }
+    #search-results li:hover {
+      background-color: #f0f0f0;
+    }
   </style>
 </head>
 <body>
@@ -97,7 +115,7 @@
   <!-- Custom Search Bar -->
   <div class="search-bar-container">
     <input type="text" id="custom-search-bar" class="search-bar" placeholder="Search for a place" />
-    <ul id="search-results" style="list-style-type: none; padding: 0; margin: 0; background-color: white; border: 1px solid #ccc; position: absolute; width: 100%; display: none;"></ul>
+    <ul id="search-results"></ul>
   </div>
   
   <div id="map"></div>
@@ -243,12 +261,9 @@
             results.forEach(result => {
               const resultItem = document.createElement('li');
               resultItem.textContent = result.label;
-              resultItem.style.cursor = 'pointer';
               resultItem.addEventListener('click', function() {
-                const selectedResult = result;
-                map.setView([selectedResult.y, selectedResult.x], 15);
-                L.marker([selectedResult.y, selectedResult.x]).addTo(map);
-                searchResultsContainer.style.display = 'none';
+                map.setView([result.y, result.x], 14);
+                searchResultsContainer.style.display = 'none';  // Hide results after selection
               });
               searchResultsContainer.appendChild(resultItem);
             });
@@ -258,6 +273,13 @@
           }
         });
       } else {
+        searchResultsContainer.style.display = 'none';
+      }
+    });
+
+    // Hide results when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!event.target.closest('.search-bar-container')) {
         searchResultsContainer.style.display = 'none';
       }
     });
