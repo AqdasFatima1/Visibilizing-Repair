@@ -61,23 +61,6 @@
     .leaflet-control-layers label {
       font-family: 'Urbanist', sans-serif;
     }
-    /* Style for the icons in the layer toggle */
-    .repair-icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background-color: #28a745;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    .need-repair-icon {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background-color: #fd7e14;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
   </style>
 </head>
 <body>
@@ -116,28 +99,23 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Pushpin-style icon for repairs happening (green)
-    const repairIcon = L.divIcon({
-      className: 'leaflet-pushpin-repair',
-      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <path d="M16 2 L14 4 L18 4 Z" fill="#28a745"/>
-              <circle cx="16" cy="16" r="14" stroke="#28a745" stroke-width="3" fill="#28a745"/>
-            </svg>`,
-      iconSize: [32, 48],
-      iconAnchor: [16, 48], // Point to the bottom center of the pin
-      popupAnchor: [0, -30]
+    // Use default Leaflet icons for repair and need-repair markers
+    const repairIcon = new L.Icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
+      shadowSize: [41, 41]
     });
 
-    // Pushpin-style icon for repairs needed (orange)
-    const needRepairIcon = L.divIcon({
-      className: 'leaflet-pushpin-need',
-      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
-              <path d="M16 2 L14 4 L18 4 Z" fill="#fd7e14"/>
-              <circle cx="16" cy="16" r="14" stroke="#fd7e14" stroke-width="3" fill="#fd7e14"/>
-            </svg>`,
-      iconSize: [32, 48],
-      iconAnchor: [16, 48], // Point to the bottom center of the pin
-      popupAnchor: [0, -30]
+    const needRepairIcon = new L.Icon({
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
+      shadowSize: [41, 41]
     });
 
     const repairLayer = L.layerGroup().addTo(map);
@@ -173,10 +151,16 @@
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
 
     // Adding the Geocoder control for searching addresses
-    L.Control.geocoder({
+    var geocoder = L.Control.geocoder({
       placeholder: "Search for an address...",
       geocoder: new L.Control.Geocoder.Nominatim()
     }).addTo(map);
+
+    // Ensure geocoder fires and centers map on result
+    geocoder.on('markgeocode', function (event) {
+      const latlng = event.geocode.center;
+      map.setView(latlng, 13); // Zoom into the address
+    });
 
     map.on('click', function (e) {
       const formPopup = L.popup()
