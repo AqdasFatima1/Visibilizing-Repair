@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.css" />
   <style>
     body {
       margin: 0;
@@ -61,6 +62,13 @@
     .leaflet-control-layers label {
       font-family: 'Urbanist', sans-serif;
     }
+    .geosearch-bar {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2000;
+    }
   </style>
 </head>
 <body>
@@ -72,10 +80,10 @@
   </div>
   <div id="map"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+  <script src="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -199,21 +207,23 @@
       });
     }
 
-    // Corrected search bar using Geocoder with Nominatim
-    const geocoder = L.Control.Geocoder.nominatim();
+    // Initialize GeoSearch
+    window.addEventListener('load', function() {
+      if (typeof GeoSearch !== 'undefined' && GeoSearch.OpenStreetMapProvider) {
+        const provider = new GeoSearch.OpenStreetMapProvider();
+        const searchControl = new GeoSearch.GeoSearchControl({
+          provider: provider,
+          style: 'bar',
+          showMarker: true,
+          retainZoomLevel: false,
+          autoClose: true,
+          searchLabel: 'Search for a place'
+        });
 
-    const geocoderControl = L.Control.geocoder({
-      geocoder: geocoder,
-      placeholder: "Search for a location...",
-      defaultMarkGeocode: true
-    }).addTo(map);
-
-    geocoderControl.on('markgeocode', function(e) {
-      const center = e.geocode.center;
-      const marker = L.marker(center).addTo(map)
-        .bindPopup(e.geocode.name)
-        .openPopup();
-      map.setView(center, 16);
+        searchControl.addTo(map);
+      } else {
+        console.error("GeoSearch or OpenStreetMapProvider is not loaded correctly");
+      }
     });
   </script>
 </body>
