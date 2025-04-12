@@ -4,10 +4,12 @@
   <meta charset="utf-8" />
   <title>Repair Stories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <!-- Leaflet GeoSearch CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.css" />
   <style>
     body {
       margin: 0;
@@ -48,8 +50,10 @@
     .custom-popup {
       color: #333;
     }
-    .leaflet-control-geocoder {
-      z-index: 1000;
+    .leaflet-control-layers label,
+    .leaflet-control-layers span {
+      font-family: 'Urbanist', sans-serif;
+      color: #000 !important;
     }
     .leaflet-control-layers {
       font-size: 16px;
@@ -58,53 +62,6 @@
       padding: 8px;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .leaflet-control-layers label {
-      font-family: 'Urbanist', sans-serif;
-    }
-    .search-bar-container {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2000;
-      width: 90%;
-      max-width: 500px;
-    }
-    .search-bar {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 12px;
-      border: 1px solid #ccc;
-      box-sizing: border-box;
-      background-color: #fff;
-      font-family: 'Urbanist', sans-serif;
-    }
-    #search-results {
-      list-style-type: none;
-      padding: 0;
-      margin: 4px 0 0 0;
-      background-color: white;
-      border: 1px solid #ccc;
-      position: absolute;
-      width: 100%;
-      display: none;
-      border-radius: 10px;
-      max-height: 200px;
-      overflow-y: auto;
-      z-index: 2001;
-    }
-    #search-results li {
-      padding: 10px;
-      font-family: 'Urbanist', sans-serif;
-      font-size: 15px;
-      color: #333;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    #search-results li:hover {
-      background-color: #f4f1ec;
     }
   </style>
 </head>
@@ -115,23 +72,20 @@
       Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
       Use the toggle to view either where repair happens or where it's needed, or both together.</p>
   </div>
-  
-  <!-- Custom Search Bar -->
-  <div class="search-bar-container">
-    <input type="text" id="custom-search-bar" class="search-bar" placeholder="Search for a place" />
-    <ul id="search-results"></ul>
-  </div>
-  
+
   <div id="map"></div>
 
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
-  <script src="https://unpkg.com/leaflet-geosearch@2.7.0/dist/bundle.min.js"></script>
+  <!-- Leaflet GeoSearch JS -->
+  <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/bundle.min.js"></script>
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
+      apiKey: "AIzaSy AiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
       authDomain: "repair-map-50701.firebaseapp.com",
       projectId: "repair-map-50701",
       storageBucket: "repair-map-50701.appspot.com",
@@ -174,113 +128,34 @@
     db.collection("markers").get().then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
-        const popupContent =
-          `<div class='custom-popup'>
-            <strong>${data.title}</strong><br>${data.description}
-            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-          </div>`;
-
-        const icon = data.type === "repair" ? greenIcon : orangeIcon;
-        const marker = L.marker([data.lat, data.lng], { icon }).bindPopup(popupContent);
-
-        if (data.type === "repair") {
-          marker.addTo(repairLayer);
-        } else {
-          marker.addTo(needRepairLayer);
-        }
-      });
-    });
-
-    L.control.layers({
-      "<span style='color:#28a745;'>Repairs are Happening</span>": repairLayer,
-      "<span style='color:#fd7e14;'>Repairs are Needed</span>": needRepairLayer
-    }, null, { collapsed: false }).addTo(map);
-
-    map.on('click', function (e) {
-      const formPopup = L.popup()
-        .setLatLng(e.latlng)
-        .setContent(
-          `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
-            <label>Type: 
-              <select id="marker-type">
-                <option value="repair">Repairs are Happening</option>
-                <option value="need">Repairs are Needed</option>
-              </select>
-            </label><br><br>
-            <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
-            <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
-            <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
-            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
-          </div>`
-        )
-        .openOn(map);
-    });
-
-    function submitMarker(lat, lng) {
-      const type = document.getElementById('marker-type').value;
-      const title = document.getElementById('marker-title').value;
-      const description = document.getElementById('marker-description').value;
-      const image = document.getElementById('marker-image').value;
-
-      if (!title || !description) {
-        alert("Please enter both a title and description.");
-        return;
-      }
-
-      const popupContent = 
-        `<div class='custom-popup'>
-          <strong>${title}</strong><br>${description}
-          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-        </div>`;
-
-      db.collection("markers").add({
-        lat,
-        lng,
-        title,
-        description,
-        image,
-        type
-      }).then(() => {
-        const newMarker = L.marker([lat, lng], {
-          icon: type === "repair" ? greenIcon : orangeIcon
+        const popupContent = `<div class='custom-popup'><strong>${data.title}</strong><br>${data.description || ''}<br>${data.imageUrl ? `<img src="${data.imageUrl}" width="100%"/>` : ''}</div>`;
+        const marker = L.marker([data.lat, data.lng], {
+          icon: data.type === 'repair' ? greenIcon : orangeIcon
         }).bindPopup(popupContent);
-
-        (type === "repair" ? repairLayer : needRepairLayer).addLayer(newMarker);
-        map.closePopup();
+        (data.type === 'repair' ? repairLayer : needRepairLayer).addLayer(marker);
       });
-    }
-
-    // Custom GeoSearch Integration
-    const customSearchInput = document.getElementById('custom-search-bar');
-    const geoSearchProvider = new GeoSearch.OpenStreetMapProvider();
-    const searchResultsContainer = document.getElementById('search-results');
-
-    customSearchInput.addEventListener('input', function() {
-      const query = customSearchInput.value;
-
-      if (query) {
-        geoSearchProvider.search(query).then(results => {
-          searchResultsContainer.innerHTML = '';
-          if (results.length > 0) {
-            results.forEach(result => {
-              const resultItem = document.createElement('li');
-              resultItem.textContent = result.label;
-              resultItem.addEventListener('click', function() {
-                map.setView([result.y, result.x], 15);
-                L.marker([result.y, result.x]).addTo(map);
-                searchResultsContainer.style.display = 'none';
-              });
-              searchResultsContainer.appendChild(resultItem);
-            });
-            searchResultsContainer.style.display = 'block';
-          } else {
-            searchResultsContainer.style.display = 'none';
-          }
-        });
-      } else {
-        searchResultsContainer.style.display = 'none';
-      }
     });
+
+    const baseMaps = {};
+    const overlayMaps = {
+      "Places of Repair": repairLayer,
+      "Needs Repair": needRepairLayer
+    };
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+    // GeoSearch control
+    const search = new window.GeoSearch.GeoSearchControl({
+      provider: new window.GeoSearch.OpenStreetMapProvider(),
+      style: 'bar',
+      autoComplete: true,
+      autoCompleteDelay: 250,
+      showMarker: true,
+      retainZoomLevel: false,
+      animateZoom: true,
+      keepResult: true,
+      searchLabel: 'Search for a location...'
+    });
+    map.addControl(search);
   </script>
 </body>
 </html>
