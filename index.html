@@ -98,21 +98,19 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Modern pushpin-style icon for repairs happening
-    const repairIcon = L.divIcon({
-      className: 'custom-icon',
-      html: '<div style="background-color: #28a745; border-radius: 50%; width: 30px; height: 30px; position: relative; top: -12px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"></div>',
+    // Pushpin-style icon for repairs happening (green)
+    const repairIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Red_pushpin.svg', // Green pushpin icon
       iconSize: [30, 30],
-      iconAnchor: [15, 30], // Pushpin effect
+      iconAnchor: [15, 30], // Point to the bottom center of the pin
       popupAnchor: [0, -30]
     });
 
-    // Modern pushpin-style icon for repairs needed
-    const needRepairIcon = L.divIcon({
-      className: 'custom-icon',
-      html: '<div style="background-color: #fd7e14; border-radius: 50%; width: 30px; height: 30px; position: relative; top: -12px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"></div>',
+    // Pushpin-style icon for repairs needed (orange)
+    const needRepairIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/a2/Red_pushpin.svg', // Orange pushpin icon
       iconSize: [30, 30],
-      iconAnchor: [15, 30], // Pushpin effect
+      iconAnchor: [15, 30], // Point to the bottom center of the pin
       popupAnchor: [0, -30]
     });
 
