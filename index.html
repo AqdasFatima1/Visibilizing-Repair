@@ -98,6 +98,7 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
+    // Colored default icons
     const greenIcon = new L.Icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
       shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
@@ -137,14 +138,12 @@
           marker.addTo(needRepairLayer);
         }
       });
-
-      // After markers are loaded, add the toggle control
-      const overlayMaps = {
-        "<span style='color:#28a745;'>Repairs are Happening</span>": repairLayer,
-        "<span style='color:#fd7e14;'>Repairs are Needed</span>": needRepairLayer
-      };
-      L.control.layers({}, overlayMaps, { collapsed: false }).addTo(map);
     });
+
+    L.control.layers({
+      "<span style='color:#28a745;'>Repairs are Happening</span>": repairLayer,
+      "<span style='color:#fd7e14;'>Repairs are Needed</span>": needRepairLayer
+    }, null, { collapsed: false }).addTo(map);
 
     map.on('click', function (e) {
       const formPopup = L.popup()
@@ -200,21 +199,18 @@
       });
     }
 
-    // Working search bar using geocoder
-    const geocoder = L.Control.geocoder({
+    // Working search bar using Geocoder with Nominatim
+    L.Control.geocoder({
       defaultMarkGeocode: false,
+      geocoder: L.Control.Geocoder.nominatim(),
       placeholder: "Search for a location..."
     })
     .on('markgeocode', function(e) {
-      const bbox = e.geocode.bbox;
-      const poly = L.polygon([
-        bbox.getSouthEast(),
-        bbox.getNorthEast(),
-        bbox.getNorthWest(),
-        bbox.getSouthWest()
-      ]).addTo(map);
-      map.fitBounds(poly.getBounds());
-      setTimeout(() => map.removeLayer(poly), 3000); // Optional: remove polygon after 3s
+      const center = e.geocode.center;
+      const marker = L.marker(center).addTo(map)
+        .bindPopup(e.geocode.name)
+        .openPopup();
+      map.setView(center, 16);
     })
     .addTo(map);
   </script>
