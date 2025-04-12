@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
@@ -77,7 +78,7 @@
   <div class="title-box">
     <h2>Repair Stories</h2>
     <p>This map collects data on repair practices and infrastructure in need of care.<br>
-      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one.<br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br>
       Use the toggle to view either where repair happens or where it's needed.</p>
   </div>
   <div class="search-bar">
@@ -90,7 +91,6 @@
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
       authDomain: "repair-map-50701.firebaseapp.com",
@@ -100,6 +100,7 @@
       appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
       measurementId: "G-11VNZY8QLX"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -109,7 +110,6 @@
       attribution: '&copy; OpenStreetMap & CartoDB contributors',
     }).addTo(map);
 
-    // Custom marker for neutral icon
     const neutralIcon = L.icon({
       iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png', // wrench-like icon
       iconSize: [26, 26],
@@ -117,20 +117,17 @@
       popupAnchor: [0, -26]
     });
 
-    // Layers for repair and need repair sites
     const repairLayer = L.layerGroup().addTo(map);
     const needRepairLayer = L.layerGroup().addTo(map);
 
-    // Fetch data from Firestore and add markers
     db.collection("markers").get().then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
-        const popupContent = `
-          <div class='custom-popup'>
+        const popupContent = 
+          `<div class='custom-popup'>
             <strong>${data.title}</strong><br>${data.description}
             ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-          </div>
-        `;
+          </div>`;
         const marker = L.marker([data.lat, data.lng], { icon: neutralIcon })
           .bindPopup(popupContent);
 
@@ -142,7 +139,6 @@
       });
     });
 
-    // Map layers control
     const baseMaps = {
       "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
       "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer
@@ -150,12 +146,11 @@
 
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
 
-    // Click event to add markers
     map.on('click', function (e) {
       const formPopup = L.popup()
         .setLatLng(e.latlng)
-        .setContent(`
-          <div style="font-family: Urbanist, sans-serif; font-size: 14px;">
+        .setContent(
+          `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
             <label>Type: 
               <select id="marker-type">
                 <option value="repair">Repair</option>
@@ -166,12 +161,11 @@
             <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
             <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
             <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
-          </div>
-        `)
+          </div>`
+        )
         .openOn(map);
     });
 
-    // Submit marker data to Firestore
     function submitMarker(lat, lng) {
       const type = document.getElementById('marker-type').value;
       const title = document.getElementById('marker-title').value;
@@ -181,47 +175,3 @@
       if (!title || !description) {
         alert("Please enter both a title and description.");
         return;
-      }
-
-      const popupContent = `
-        <div class='custom-popup'>
-          <strong>${title}</strong><br>${description}
-          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-        </div>
-      `;
-      const marker = L.marker([lat, lng], { icon: neutralIcon })
-        .bindPopup(popupContent)
-        .addTo(type === "repair" ? repairLayer : needRepairLayer)
-        .openPopup();
-
-      db.collection("markers").add({
-        type,
-        title,
-        description,
-        image: image || null,
-        lat,
-        lng
-      });
-
-      map.closePopup();
-    }
-
-    // Search functionality for location
-    document.getElementById('search').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        const query = this.value;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.length > 0) {
-              const loc = data[0];
-              map.setView([loc.lat, loc.lon], 16);
-            } else {
-              alert("Location not found.");
-            }
-          });
-      }
-    });
-  </script>
-</body>
-</html>
