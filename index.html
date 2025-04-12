@@ -1,126 +1,238 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <title>NYC Repair & Maintenance Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <title>Repair Map NYC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
-    body, html { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #fff; }
-    #map { width: 100vw; height: 100vh; }
-
-    .title {
+    body {
+      margin: 0;
+      font-family: 'Urbanist', sans-serif;
+      background-color: #f4f1ec;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+    .title-box {
       position: absolute;
-      top: 15px;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      max-width: 300px;
+    }
+    .title-box h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: #5a5a5a;
+    }
+    .title-box p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      color: #777;
+    }
+    .leaflet-popup-content {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 14px;
+    }
+    .custom-popup {
+      color: #333;
+    }
+    .search-bar {
+      position: absolute;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
-      font-size: 28px;
-      font-weight: bold;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 12px 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
     }
-
-    .description {
-      position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      font-size: 16px;
-      width: 80%;
-      max-width: 800px;
-      text-align: center;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px 15px;
-      border-radius: 10px;
-      line-height: 1.6;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-
-    .leaflet-control-layers {
-      font-family: 'Inter', sans-serif !important;
-      font-weight: 500;
-      font-size: 15px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px;
+    .search-bar input {
+      width: 100%;
       padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .leaflet-control-layers {
+      font-size: 16px;
+      font-weight: 600;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 8px;
+      border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-
-    .leaflet-top.leaflet-left .leaflet-control {
-      margin-top: 10px;
-      margin-left: 10px;
-    }
-
-    .leaflet-geosearch-bar {
-      max-width: 400px;
-      margin: 15px auto;
+    .leaflet-control-layers label {
+      font-family: 'Urbanist', sans-serif;
     }
   </style>
 </head>
 <body>
-  <div class="title">NYC Repair & Maintenance Map</div>
-  <div class="description">
-    This crowdsourced map visualizes places in NYC where people go to repair and maintain things, alongside areas that need repair. Use the toggle to view either or both layers, and click on points for details.
+  <div class="title-box">
+    <h2>Repair Stories</h2>
+    <p>This map collects data on repair practices and infrastructure in need of care.<br><br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
+      Use the toggle to view either where repair happens or where it's needed, or both together.</p>
+  </div>
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="Search address..." />
   </div>
   <div id="map"></div>
 
-  <!-- Leaflet + Color Filter + GeoSearch JS -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/xtk93x/Leaflet.TileLayer.ColorFilter@1.2.5/src/leaflet-tilelayer-colorfilter.min.js"></script>
-  <script src="https://unpkg.com/leaflet-geosearch@3.0.0/dist/bundle.min.js"></script>
 
   <script>
-    // Initialize map
-    const map = L.map('map').setView([40.7128, -74.0060], 12);
-
-    // Subtle orange-tinted basemap
-    const baseLayer = L.tileLayer.colorFilter('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      filter: ['hue-rotate(20deg)', 'brightness(1.1)', 'saturate(1.2)'],
-      attribution: '&copy; OpenStreetMap & CartoDB contributors'
-    }).addTo(map);
-
-    // Dummy data for demonstration
-    const repairPlaces = L.layerGroup([
-      L.marker([40.7228, -74.001]).bindPopup('Community Repair Center'),
-      L.marker([40.715, -74.010]).bindPopup('Bike Repair Spot')
-    ]);
-
-    const infrastructureNeeds = L.layerGroup([
-      L.marker([40.729, -74.002]).bindPopup('Broken Sidewalk'),
-      L.marker([40.713, -74.012]).bindPopup('Streetlight Outage')
-    ]);
-
-    const bothLayers = L.layerGroup([repairPlaces, infrastructureNeeds]);
-
-    // Add layer toggles
-    const overlays = {
-      "<b style='font-weight:600'>Places of Repair</b>": repairPlaces,
-      "<b style='font-weight:600'>Needs Repair</b>": infrastructureNeeds,
-      "<b style='font-weight:600'>Show Both</b>": bothLayers
+    const firebaseConfig = {
+      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
+      authDomain: "repair-map-50701.firebaseapp.com",
+      projectId: "repair-map-50701",
+      storageBucket: "repair-map-50701.appspot.com",
+      messagingSenderId: "42233664095",
+      appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
+      measurementId: "G-11VNZY8QLX"
     };
 
-    L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // Add both layers by default
-    bothLayers.addTo(map);
+    const map = L.map('map').setView([40.7128, -74.0060], 12);
 
-    // Add search bar
-    const search = new GeoSearch.GeoSearchControl({
-      provider: new GeoSearch.OpenStreetMapProvider(),
-      style: 'bar',
-      showMarker: true,
-      showPopup: false,
-      autoClose: true,
-      searchLabel: 'Search for address or place...',
-      keepResult: true
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap & CartoDB contributors',
+      className: 'leaflet-warm-toned',
+    }).addTo(map);
+
+    const neutralIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png',
+      iconSize: [24, 24],
+      iconAnchor: [12, 24],
+      popupAnchor: [0, -24]
     });
-    map.addControl(search);
+
+    const repairLayer = L.layerGroup().addTo(map);
+    const needRepairLayer = L.layerGroup().addTo(map);
+
+    db.collection("markers").get().then(snapshot => {
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const popupContent =
+          `<div class='custom-popup'>
+            <strong>${data.title}</strong><br>${data.description}
+            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
+          </div>`;
+        const marker = L.marker([data.lat, data.lng], { icon: neutralIcon })
+          .bindPopup(popupContent);
+
+        if (data.type === "repair") {
+          marker.addTo(repairLayer);
+        } else {
+          marker.addTo(needRepairLayer);
+        }
+      });
+    });
+
+    const baseMaps = {
+      "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
+      "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer,
+      "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map)
+    };
+
+    L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
+
+    map.on('click', function (e) {
+      const formPopup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent(
+          `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
+            <label>Type: 
+              <select id="marker-type">
+                <option value="repair">Repair</option>
+                <option value="need">Needs Repair</option>
+              </select>
+            </label><br><br>
+            <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
+            <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
+            <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
+            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
+          </div>`
+        )
+        .openOn(map);
+    });
+
+    function submitMarker(lat, lng) {
+      const type = document.getElementById('marker-type').value;
+      const title = document.getElementById('marker-title').value;
+      const description = document.getElementById('marker-description').value;
+      const image = document.getElementById('marker-image').value;
+
+      if (!title || !description) {
+        alert("Please enter both a title and description.");
+        return;
+      }
+
+      const popupContent =
+        `<div class='custom-popup'>
+          <strong>${title}</strong><br>${description}
+          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
+        </div>`;
+      const marker = L.marker([lat, lng], { icon: neutralIcon })
+        .bindPopup(popupContent)
+        .addTo(type === "repair" ? repairLayer : needRepairLayer)
+        .openPopup();
+
+      db.collection("markers").add({
+        type,
+        title,
+        description,
+        image: image || null,
+        lat,
+        lng
+      });
+
+      map.closePopup();
+    }
+
+    let searchMarker = null;
+
+    document.getElementById('search').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const query = this.value;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.length > 0) {
+              const loc = data[0];
+              const lat = parseFloat(loc.lat);
+              const lon = parseFloat(loc.lon);
+
+              map.setView([lat, lon], 16);
+
+              if (searchMarker) {
+                map.removeLayer(searchMarker);
+              }
+
+              searchMarker = L.marker([lat, lon])
+                .addTo(map)
+                .bindPopup(`<strong>${loc.display_name}</strong>`)
+                .openPopup();
+            } else {
+              alert("Location not found.");
+            }
+          })
+          .catch(() => alert("Search failed. Please try again."));
+      }
+    });
   </script>
 </body>
 </html>
