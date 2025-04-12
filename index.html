@@ -10,7 +10,7 @@
     body {
       margin: 0;
       font-family: 'Urbanist', sans-serif;
-      background-color: #f4e0c1; /* Warm background color */
+      background-color: #f4e0c1; /* Beige background */
     }
     #map {
       height: 100vh;
@@ -30,7 +30,7 @@
     }
     .title-box h2 {
       margin: 0;
-      font-size: 24px; /* Increase title font size */
+      font-size: 24px; /* Larger title */
       font-weight: 600;
       color: #5a5a5a;
     }
@@ -38,7 +38,7 @@
       margin: 8px 0 0;
       font-size: 14px;
       color: #777;
-      line-height: 1.5; /* Increase line spacing */
+      line-height: 1.5; /* Increased line height for spacing */
     }
     .leaflet-popup-content {
       font-family: 'Urbanist', sans-serif;
@@ -66,7 +66,7 @@
       border-radius: 6px;
     }
     .leaflet-control-layers {
-      font-size: 16px; /* Increase font size */
+      font-size: 16px; /* Layer toggle font size */
       font-weight: 600;
       background-color: rgba(255, 255, 255, 0.95);
       padding: 10px;
@@ -74,15 +74,15 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     .leaflet-control-layers label {
-      font-size: 16px; /* Increase label size */
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
   <div class="title-box">
     <h2>Repair Stories</h2>
-    <p>This map collects data on repair practices and infrastructure in need of care.<br>
-      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!.<br>
+    <p>This map collects data on repair practices and infrastructure in need of care.<br><br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair!<br><br>
       Use the toggle to view either where repair happens or where it's needed, or view both layers at once.</p>
   </div>
   <div class="search-bar">
@@ -110,11 +110,20 @@
 
     const map = L.map('map').setView([40.7128, -74.0060], 12);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {  // Warmer-toned map layer
+    // Warm beige toned map
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap & CartoDB contributors',
     }).addTo(map);
 
-    const neutralIcon = L.circleMarker([0, 0], { radius: 8, fillColor: '#ff6347', color: '#ff6347', weight: 3, opacity: 1, fillOpacity: 0.6 });  // Simpler marker (circle)
+    // Simple marker style (circle marker)
+    const neutralIcon = L.circleMarker([0, 0], {
+      radius: 8,
+      fillColor: '#ff6347',  // Warm orange-red color
+      color: '#ff6347',
+      weight: 3,
+      opacity: 1,
+      fillOpacity: 0.6
+    });
 
     const repairLayer = L.layerGroup().addTo(map);
     const needRepairLayer = L.layerGroup().addTo(map);
@@ -141,7 +150,7 @@
     const baseMaps = {
       "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
       "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer,
-      "<span style='color:#444'>🔧 Both Layers</span>": L.layerGroup([repairLayer, needRepairLayer])  // Added both layers toggle
+      "<span style='color:#444'>🔧 Both Layers</span>": L.layerGroup([repairLayer, needRepairLayer])  // Show both layers option
     };
 
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
@@ -199,6 +208,7 @@
       map.closePopup();
     }
 
+    // Search functionality
     document.getElementById('search').addEventListener('keydown', function (e) {
       if (e.key === 'Enter') {
         const query = this.value;
