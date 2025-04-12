@@ -218,34 +218,21 @@
         return;
       }
 
-      const popupContent = `
-        <div class='custom-popup'>
-          <strong>${title}</strong><br>${description}
-          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-        </div>`;
-        
-      const icon = type === "repair" ? repairIcon : needRepairIcon;
-      const marker = L.marker([lat, lng], { icon })
-        .bindPopup(popupContent)
-        .addTo(type === "repair" ? repairLayer : needRepairLayer)
-        .openPopup();
-
       db.collection("markers").add({
-        type,
-        title,
-        description,
-        image: image || null,
-        lat,
-        lng
+        lat, lng, type, title, description, image
+      }).then(() => {
+        alert('Thank you for submitting!');
+        location.reload();
+      }).catch(err => {
+        alert('Error: ' + err);
       });
-
-      map.closePopup();
     }
 
-    // Add geocoder control
+    // Geocoding search control (adds suggestions & zoom to location)
     L.Control.geocoder({
-      defaultMarkGeocode: true
+      geocoder: new L.Control.Geocoder.Nominatim(),
     }).addTo(map);
+
   </script>
 </body>
 </html>
