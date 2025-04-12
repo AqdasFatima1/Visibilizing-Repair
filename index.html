@@ -61,17 +61,6 @@
     .leaflet-control-layers label {
       font-family: 'Urbanist', sans-serif;
     }
-    /* Orange/beige tinge overlay */
-    .tinge-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(255, 153, 102, 0.15); /* Light orange/beige tinge */
-      pointer-events: none;
-      z-index: 1;
-    }
   </style>
 </head>
 <body>
@@ -109,10 +98,6 @@
       attribution: '&copy; OpenStreetMap & CartoDB contributors',
       className: 'leaflet-warm-toned',
     }).addTo(map);
-
-    // Adding overlay for the tinge effect
-    const tingeOverlay = L.DomUtil.create('div', 'tinge-overlay');
-    map.getPanes().overlayPane.appendChild(tingeOverlay);
 
     // Pushpin-style icon for repairs happening (green)
     const repairIcon = L.divIcon({
@@ -229,15 +214,8 @@
     }
 
     // Add geocoder control for searching addresses
-    L.Control.geocoder({
-      collapsed: false,
-      placeholder: 'Search for an address...',
-      query: '',
-      errorMessage: 'Address not found',
-      suggest: function(results) {
-        console.log(results); // Debugging results
-      }
-    }).addTo(map);
+    L.Control.Geocoder.nominatim().addTo(map);
+
   </script>
 </body>
 </html>
