@@ -62,12 +62,14 @@
     .leaflet-control-layers label {
       font-family: 'Urbanist', sans-serif;
     }
+    /* Make GeoSearch control fixed at the top */
     .geosearch-bar {
-      position: absolute;
+      position: fixed !important;
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 2000;
+      width: 90%; /* Adjust width as necessary */
     }
   </style>
 </head>
