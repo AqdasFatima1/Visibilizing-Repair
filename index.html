@@ -72,9 +72,14 @@
       padding: 10px;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-family: 'Urbanist', sans-serif;
     }
     .leaflet-control-layers label {
       font-size: 16px;
+      font-family: 'Urbanist', sans-serif;
+    }
+    .leaflet-control-layers input {
+      display: none; /* Hide the icons */
     }
   </style>
 </head>
@@ -128,6 +133,7 @@
     const repairLayer = L.layerGroup().addTo(map);
     const needRepairLayer = L.layerGroup().addTo(map);
 
+    // Fetching data from Firebase
     db.collection("markers").get().then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
@@ -148,9 +154,9 @@
     });
 
     const baseMaps = {
-      "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
-      "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer,
-      "<span style='color:#444'>🔧 Both Layers</span>": L.layerGroup([repairLayer, needRepairLayer])  // Show both layers option
+      "Repair Sites": repairLayer,
+      "Needs Repair": needRepairLayer,
+      "Both Layers": L.layerGroup([repairLayer, needRepairLayer])  // Show both layers option
     };
 
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
