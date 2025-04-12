@@ -229,8 +229,11 @@
     }
 
     // Geocoding search control (adds suggestions & zoom to location)
-    L.Control.geocoder({
+    const geocoder = L.Control.geocoder({
       geocoder: new L.Control.Geocoder.Nominatim(),
+      placeholder: "Search for a location..."
+    }).on('markgeocode', function(e) {
+      map.setView(e.geocode.center, 15); // Zoom to selected location
     }).addTo(map);
 
   </script>
