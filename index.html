@@ -206,12 +206,11 @@
     }
 
     // Initialize geocoder search bar
-    L.Control.geocoder({
-      position: 'topleft',
+    const geocoderControl = L.Control.geocoder({
+      position: 'topright',
       placeholder: 'Search for places',
       collapseOnBlur: true
     }).addTo(map);
-
   </script>
 </body>
 </html>
