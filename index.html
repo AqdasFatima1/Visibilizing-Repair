@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
   <style>
     body {
       margin: 0;
@@ -15,6 +16,7 @@
     #map {
       height: 100vh;
       width: 100%;
+      z-index: 0;
     }
     .title-box {
       position: absolute;
@@ -45,23 +47,8 @@
     .custom-popup {
       color: #333;
     }
-    .search-bar {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
+    .leaflet-control-geocoder {
       z-index: 1000;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      width: 300px;
-    }
-    .search-bar input {
-      width: 100%;
-      padding: 6px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
     }
     .leaflet-control-layers {
       font-size: 16px;
@@ -83,14 +70,12 @@
       Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
       Use the toggle to view either where repair happens or where it's needed, or both together.</p>
   </div>
-  <div class="search-bar">
-    <input type="text" id="search" placeholder="Search address..." />
-  </div>
   <div id="map"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -181,7 +166,7 @@
         return;
       }
 
-      const popupContent =
+      const popupContent = 
         `<div class='custom-popup'>
           <strong>${title}</strong><br>${description}
           ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
@@ -203,36 +188,10 @@
       map.closePopup();
     }
 
-    let searchMarker = null;
-
-    document.getElementById('search').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') {
-        const query = this.value;
-        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.length > 0) {
-              const loc = data[0];
-              const lat = parseFloat(loc.lat);
-              const lon = parseFloat(loc.lon);
-
-              map.setView([lat, lon], 16);
-
-              if (searchMarker) {
-                map.removeLayer(searchMarker);
-              }
-
-              searchMarker = L.marker([lat, lon])
-                .addTo(map)
-                .bindPopup(`<strong>${loc.display_name}</strong>`)
-                .openPopup();
-            } else {
-              alert("Location not found.");
-            }
-          })
-          .catch(() => alert("Search failed. Please try again."));
-      }
-    });
+    // Add geocoder control
+    L.Control.geocoder({
+      defaultMarkGeocode: true
+    }).addTo(map);
   </script>
 </body>
 </html>
