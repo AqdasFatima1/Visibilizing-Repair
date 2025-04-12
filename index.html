@@ -1,216 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Repair Stories</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Urbanist', sans-serif;
-      background-color: #f4f1ec;
+<!-- In your HTML <head> -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+<!-- Just before </body> -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+<script>
+  const map = L.map('map').setView([40.7128, -74.0060], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Colored Leaflet default-style icons
+  const greenIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  const orangeIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+  });
+
+  const repairLayer = L.layerGroup().addTo(map);
+  const needRepairLayer = L.layerGroup().addTo(map);
+
+  // Replace this with your Firestore data fetch
+  // Example dummy data to test:
+  const markers = [
+    { lat: 40.72, lng: -74.0, type: 'repair', title: 'Bike Shop', description: 'Fixes cycles' },
+    { lat: 40.71, lng: -74.01, type: 'need', title: 'Broken Bench', description: 'Needs fixing' }
+  ];
+
+  markers.forEach(data => {
+    const popupContent = `<strong>${data.title}</strong><br>${data.description}`;
+    const icon = data.type === "repair" ? greenIcon : orangeIcon;
+
+    const marker = L.marker([data.lat, data.lng], { icon })
+      .bindPopup(popupContent);
+
+    if (data.type === "repair") {
+      marker.addTo(repairLayer);
+    } else {
+      marker.addTo(needRepairLayer);
     }
-    #map {
-      height: 100vh;
-      width: 100%;
-      z-index: 0;
-    }
-    .title-box {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 12px 16px;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      z-index: 1000;
-      max-width: 300px;
-    }
-    .title-box h2 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 600;
-      color: #5a5a5a;
-    }
-    .title-box p {
-      margin: 8px 0 0;
-      font-size: 14px;
-      color: #777;
-    }
-    .leaflet-popup-content {
-      font-family: 'Urbanist', sans-serif;
-      font-size: 14px;
-    }
-    .custom-popup {
-      color: #333;
-    }
-    .leaflet-control-geocoder {
-      z-index: 1000;
-    }
-    .leaflet-control-layers {
-      font-size: 16px;
-      font-weight: 600;
-      background-color: rgba(255, 255, 255, 0.95);
-      padding: 8px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    }
-    .leaflet-control-layers label {
-      font-family: 'Urbanist', sans-serif;
-    }
-  </style>
-</head>
-<body>
-  <div class="title-box">
-    <h2>Repair Stories</h2>
-    <p>This map collects data on repair practices and infrastructure in need of care.<br><br>
-      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
-      Use the toggle to view either where repair happens or where it's needed, or both together.</p>
-  </div>
-  <div id="map"></div>
+  });
 
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  // Layer control
+  L.control.layers(null, {
+    "Repairs are Happening": repairLayer,
+    "Repairs are Needed": needRepairLayer
+  }, { collapsed: false }).addTo(map);
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
-      authDomain: "repair-map-50701.firebaseapp.com",
-      projectId: "repair-map-50701",
-      storageBucket: "repair-map-50701.appspot.com",
-      messagingSenderId: "42233664095",
-      appId: "1:42233664095:web:da8ddb442169ed06f8c1ea",
-      measurementId: "G-11VNZY8QLX"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    const map = L.map('map').setView([40.7128, -74.0060], 12);
-
-    // Tile layer with light beige/orange tinge
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap & CartoDB contributors',
-      className: 'leaflet-warm-toned',
-    }).addTo(map);
-
-    // Pushpin-style icon for repairs happening (green)
-    const repairIcon = L.icon({
-      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Map_marker_green.svg/512px-Map_marker_green.svg.png',
-      iconSize: [32, 48],
-      iconAnchor: [16, 48], // Point to the bottom center of the pin
-      popupAnchor: [0, -30]
-    });
-
-    // Pushpin-style icon for repairs needed (orange)
-    const needRepairIcon = L.icon({
-      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Map_marker_orange.svg/512px-Map_marker_orange.svg.png',
-      iconSize: [32, 48],
-      iconAnchor: [16, 48], // Point to the bottom center of the pin
-      popupAnchor: [0, -30]
-    });
-
-    const repairLayer = L.layerGroup().addTo(map);
-    const needRepairLayer = L.layerGroup().addTo(map);
-
-    db.collection("markers").get().then(snapshot => {
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const popupContent = 
-          `<div class='custom-popup'>
-            <strong>${data.title}</strong><br>${data.description}
-            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-          </div>`;
-        
-        const icon = data.type === "repair" ? repairIcon : needRepairIcon;
-        const marker = L.marker([data.lat, data.lng], { icon })
-          .bindPopup(popupContent);
-
-        if (data.type === "repair") {
-          marker.addTo(repairLayer);
-        } else {
-          marker.addTo(needRepairLayer);
-        }
-      });
-    });
-
-    const baseMaps = {
-      "<img src='https://via.placeholder.com/18/28a745/28a745?text=+' style='vertical-align:middle;margin-right:6px;'>Repairs are Happening Here": repairLayer,
-      "<img src='https://via.placeholder.com/18/fd7e14/fd7e14?text=+' style='vertical-align:middle;margin-right:6px;'>Repairs are Needed Here": needRepairLayer,
-      "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map)
-    };
-
-    L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
-
-    map.on('click', function (e) {
-      const formPopup = L.popup()
-        .setLatLng(e.latlng)
-        .setContent(
-          `<div style="font-family: Urbanist, sans-serif; font-size: 14px;">
-            <label>Type: 
-              <select id="marker-type">
-                <option value="repair">Repairs are Happening</option>
-                <option value="need">Repairs are Needed</option>
-              </select>
-            </label><br><br>
-            <label>Title:<br><input id="marker-title" type="text" style="width: 100%" /></label><br><br>
-            <label>Description:<br><textarea id="marker-description" style="width: 100%" rows="3"></textarea></label><br><br>
-            <label>Image URL:<br><input id="marker-image" type="text" style="width: 100%" /></label><br><br>
-            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
-          </div>`
-        )
-        .openOn(map);
-    });
-
-    function submitMarker(lat, lng) {
-      const type = document.getElementById('marker-type').value;
-      const title = document.getElementById('marker-title').value;
-      const description = document.getElementById('marker-description').value;
-      const image = document.getElementById('marker-image').value;
-
-      if (!title || !description) {
-        alert("Please enter both a title and description.");
-        return;
-      }
-
-      const popupContent = 
-        `<div class='custom-popup'>
-          <strong>${title}</strong><br>${description}
-          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
-        </div>`;
-
-      db.collection("markers").add({
-        lat,
-        lng,
-        title,
-        description,
-        image,
-        type
-      }).then(docRef => {
-        const newMarker = L.marker([lat, lng], { icon: type === "repair" ? repairIcon : needRepairIcon })
-          .bindPopup(popupContent);
-
-        if (type === "repair") {
-          newMarker.addTo(repairLayer);
-        } else {
-          newMarker.addTo(needRepairLayer);
-        }
-
-        map.closePopup();
-      });
-    }
-
-    // Initialize geocoder search bar
-    const geocoderControl = L.Control.geocoder({
-      position: 'topright',
-      placeholder: 'Search for places',
-      collapseOnBlur: true
-    }).addTo(map);
-  </script>
-</body>
-</html>
+  // Working search bar
+  L.Control.geocoder({
+    defaultMarkGeocode: true
+  }).addTo(map);
+</script>
