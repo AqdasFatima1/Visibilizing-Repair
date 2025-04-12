@@ -62,16 +62,24 @@
     .leaflet-control-layers label {
       font-family: 'Urbanist', sans-serif;
     }
-    /* Custom styles for GeoSearch fixed position */
-    .leaflet-geosearch-bar {
-      position: fixed !important;
+    /* Custom styles for the custom search bar */
+    .search-bar-container {
+      position: fixed;
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 2000;
       width: 90%;
       max-width: 500px;
-      margin-top: 10px;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      background-color: #fff;
     }
   </style>
 </head>
@@ -82,6 +90,12 @@
       Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
       Use the toggle to view either where repair happens or where it's needed, or both together.</p>
   </div>
+  
+  <!-- Custom Search Bar -->
+  <div class="search-bar-container">
+    <input type="text" id="custom-search-bar" class="search-bar" placeholder="Search for a place" />
+  </div>
+  
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
@@ -211,27 +225,23 @@
       });
     }
 
-    // Initialize GeoSearch
-    window.addEventListener('load', function() {
-      if (typeof GeoSearch !== 'undefined' && GeoSearch.OpenStreetMapProvider) {
-        const provider = new GeoSearch.OpenStreetMapProvider();
-        const searchControl = new GeoSearch.GeoSearchControl({
-          provider: provider,
-          style: 'bar',
-          showMarker: true,
-          retainZoomLevel: false,
-          autoClose: true,
-          searchLabel: 'Search for a place'
-        });
+    // Integrate GeoSearch with custom search bar
+    const customSearchInput = document.getElementById('custom-search-bar');
+    const geoSearchProvider = new GeoSearch.OpenStreetMapProvider();
 
-        searchControl.addTo(map);
-        // Fix the position of GeoSearch bar using custom CSS
-        document.querySelector('.leaflet-geosearch-bar').style.position = 'fixed';
-        document.querySelector('.leaflet-geosearch-bar').style.top = '10px';
-        document.querySelector('.leaflet-geosearch-bar').style.left = '50%';
-        document.querySelector('.leaflet-geosearch-bar').style.transform = 'translateX(-50%)';
-      } else {
-        console.error("GeoSearch or OpenStreetMapProvider is not loaded correctly");
+    customSearchInput.addEventListener('input', function() {
+      const query = customSearchInput.value;
+
+      if (query) {
+        geoSearchProvider.search(query).then(results => {
+          if (results.length > 0) {
+            const { x, y } = results[0];
+            map.setView([y, x], 14);
+            L.marker([y, x]).addTo(map).bindPopup(results[0].label).openPopup();
+          }
+        }).catch(error => {
+          console.error(error);
+        });
       }
     });
   </script>
