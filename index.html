@@ -30,7 +30,7 @@
     }
     .title-box h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 24px; /* Increased title size */
       font-weight: 600;
       color: #5a5a5a;
     }
@@ -65,21 +65,24 @@
       border-radius: 6px;
     }
     .leaflet-control-layers {
-      font-size: 14px;
+      font-size: 16px; /* Increased font size */
       font-weight: 600;
       background-color: rgba(255, 255, 255, 0.95);
       padding: 8px;
       border-radius: 10px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
+    .leaflet-control-layers label {
+      font-family: 'Urbanist', sans-serif; /* Matching font */
+    }
   </style>
 </head>
 <body>
   <div class="title-box">
     <h2>Repair Stories</h2>
-    <p>This map collects data on repair practices and infrastructure in need of care.<br>
-      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br>
-      Use the toggle to view either where repair happens or where it's needed.</p>
+    <p>This map collects data on repair practices and infrastructure in need of care.<br><br>
+      Click anywhere on the map to share where you go for repairs, or if there is something you know that is in need of repair! You can even add an image if you have one!<br><br>
+      Use the toggle to view either where repair happens or where it's needed, or both together.</p>
   </div>
   <div class="search-bar">
     <input type="text" id="search" placeholder="Search address..." />
@@ -106,15 +109,17 @@
 
     const map = L.map('map').setView([40.7128, -74.0060], 12);
 
+    // Warm-toned map tile layer with an orange tinge
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap & CartoDB contributors',
+      className: 'leaflet-warm-toned',  // Custom class for styling the tile layer
     }).addTo(map);
 
     const neutralIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png', // wrench-like icon
-      iconSize: [26, 26],
-      iconAnchor: [13, 26],
-      popupAnchor: [0, -26]
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/595/595067.png', // Simpler wrench-like icon
+      iconSize: [24, 24],
+      iconAnchor: [12, 24],
+      popupAnchor: [0, -24]
     });
 
     const repairLayer = L.layerGroup().addTo(map);
@@ -141,7 +146,8 @@
 
     const baseMaps = {
       "<span style='color:#444'>🛠️ Repair Sites</span>": repairLayer,
-      "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer
+      "<span style='color:#444'>⚠️ Needs Repair</span>": needRepairLayer,
+      "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map) // Option to show both layers
     };
 
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
@@ -175,3 +181,45 @@
       if (!title || !description) {
         alert("Please enter both a title and description.");
         return;
+      }
+
+      const popupContent = 
+        `<div class='custom-popup'>
+          <strong>${title}</strong><br>${description}
+          ${image ? `<br><img src="${image}" width="100%" style="margin-top: 6px; border-radius: 6px;" />` : ""}
+        </div>`;
+      const marker = L.marker([lat, lng], { icon: neutralIcon })
+        .bindPopup(popupContent)
+        .addTo(type === "repair" ? repairLayer : needRepairLayer)
+        .openPopup();
+
+      db.collection("markers").add({
+        type,
+        title,
+        description,
+        image: image || null,
+        lat,
+        lng
+      });
+
+      map.closePopup();
+    }
+
+    document.getElementById('search').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const query = this.value;
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.length > 0) {
+              const loc = data[0];
+              map.setView([loc.lat, loc.lon], 16);
+            } else {
+              alert("Location not found.");
+            }
+          });
+      }
+    });
+  </script>
+</body>
+</html>
