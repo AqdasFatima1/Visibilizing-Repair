@@ -172,13 +172,10 @@
 
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
 
-    // Add the geocoder control and ensure it works with OpenStreetMap Nominatim API
-    const geocoder = L.Control.Geocoder.nominatim();
+    // Adding the Geocoder control for searching addresses
     L.Control.geocoder({
-      query: '',
-      placeholder: 'Search for an address...',
-      collapsed: false,
-      geocoder: geocoder
+      placeholder: "Search for an address...",
+      geocoder: new L.Control.Geocoder.Nominatim()
     }).addTo(map);
 
     map.on('click', function (e) {
