@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>Repair Stories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
   <style>
     body {
       margin: 0;
@@ -110,25 +109,26 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Adding overlay for the tinge effect (more visible)
+    // Adding overlay for the tinge effect
     const tingeOverlay = L.DomUtil.create('div', 'tinge-overlay');
     map.getPanes().overlayPane.appendChild(tingeOverlay);
 
-    // Default marker icons
-    const repairIcon = new L.Icon({
-      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/6b/Map_marker_icon.svg', // Default pin
-      iconSize: [32, 48],
-      iconAnchor: [16, 48],
-      popupAnchor: [0, -30]
+    // Default marker icons (pushpin style)
+    const repairIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Map_marker_icon.svg/1024px-Map_marker_icon.svg.png', 
+      iconSize: [32, 32], 
+      iconAnchor: [16, 32], 
+      popupAnchor: [0, -32]
     });
 
-    const needRepairIcon = new L.Icon({
-      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Map_marker_icon_red.svg', // Red pin for repairs needed
-      iconSize: [32, 48],
-      iconAnchor: [16, 48],
-      popupAnchor: [0, -30]
+    const needRepairIcon = L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Map_marker_icon.svg/1024px-Map_marker_icon.svg.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
     });
 
+    // Layers for repairs happening and repairs needed
     const repairLayer = L.layerGroup().addTo(map);
     const needRepairLayer = L.layerGroup().addTo(map);
 
