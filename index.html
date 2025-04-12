@@ -199,20 +199,22 @@
       });
     }
 
-    // Working search bar using Geocoder with Nominatim
-    L.Control.geocoder({
-      defaultMarkGeocode: false,
-      geocoder: L.Control.Geocoder.nominatim(),
-      placeholder: "Search for a location..."
-    })
-    .on('markgeocode', function(e) {
+    // Corrected search bar using Geocoder with Nominatim
+    const geocoder = L.Control.Geocoder.nominatim();
+
+    const geocoderControl = L.Control.geocoder({
+      geocoder: geocoder,
+      placeholder: "Search for a location...",
+      defaultMarkGeocode: true
+    }).addTo(map);
+
+    geocoderControl.on('markgeocode', function(e) {
       const center = e.geocode.center;
       const marker = L.marker(center).addTo(map)
         .bindPopup(e.geocode.name)
         .openPopup();
       map.setView(center, 16);
-    })
-    .addTo(map);
+    });
   </script>
 </body>
 </html>
