@@ -94,6 +94,7 @@
   <!-- Custom Search Bar -->
   <div class="search-bar-container">
     <input type="text" id="custom-search-bar" class="search-bar" placeholder="Search for a place" />
+    <ul id="search-results" style="list-style-type: none; padding: 0; margin: 0; background-color: white; border: 1px solid #ccc; position: absolute; width: 100%; display: none;"></ul>
   </div>
   
   <div id="map"></div>
@@ -124,7 +125,6 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Colored default icons
     const greenIcon = new L.Icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
       shadowUrl: 'https://unpkg.com/leaflet@1.9.3/dist/images/marker-shadow.png',
@@ -228,20 +228,34 @@
     // Integrate GeoSearch with custom search bar
     const customSearchInput = document.getElementById('custom-search-bar');
     const geoSearchProvider = new GeoSearch.OpenStreetMapProvider();
+    const searchResultsContainer = document.getElementById('search-results');
 
     customSearchInput.addEventListener('input', function() {
       const query = customSearchInput.value;
 
       if (query) {
         geoSearchProvider.search(query).then(results => {
+          searchResultsContainer.innerHTML = '';  // Clear previous results
           if (results.length > 0) {
-            const { x, y } = results[0];
-            map.setView([y, x], 14);
-            L.marker([y, x]).addTo(map).bindPopup(results[0].label).openPopup();
+            results.forEach(result => {
+              const resultItem = document.createElement('li');
+              resultItem.textContent = result.label;
+              resultItem.style.cursor = 'pointer';
+              resultItem.addEventListener('click', function() {
+                const selectedResult = result;
+                map.setView([selectedResult.y, selectedResult.x], 15);
+                L.marker([selectedResult.y, selectedResult.x]).addTo(map);
+                searchResultsContainer.style.display = 'none';
+              });
+              searchResultsContainer.appendChild(resultItem);
+            });
+            searchResultsContainer.style.display = 'block';
+          } else {
+            searchResultsContainer.style.display = 'none';
           }
-        }).catch(error => {
-          console.error(error);
         });
+      } else {
+        searchResultsContainer.style.display = 'none';
       }
     });
   </script>
