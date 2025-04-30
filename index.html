@@ -59,7 +59,7 @@
       We’re charting everything from neighborhood electronics repair shops, to community “fix-it” clinics where volunteers mend clothes, to neighbors coming together to fix cracked stoops—all the acts that keep our streets and services running.<br><br>
       We’re also mapping public infrastructure in need—broken sidewalks, flickering streetlights, unusable benches—so we can make neglect seen and demand the livable public spaces we all deserve!<br><br>
       Click anywhere on the map to share where you go for repairs, or to mark something that needs fixing. You can even upload a photo!<br><br>
-      Use the toggle to view either where repair happens or where it's needed, or both together.</p>
+      Use the toggle to view either where repair happens, where it’s needed, or both together.</p>
   </div>
   <div id="map"></div>
 
@@ -198,6 +198,11 @@
     });
 
     map.addControl(search);
+
+    // Zoom to selected search result
+    map.on('geosearch/showlocation', function(e) {
+      map.setView([ e.location.y, e.location.x ], 16);
+    });
   </script>
 </body>
 </html>
