@@ -8,9 +8,10 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
   />
+  <!-- updated to v3.11.1 -->
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet-geosearch@3.10.0/assets/css/leaflet.css"
+    href="https://unpkg.com/leaflet-geosearch@3.11.1/assets/css/leaflet.css"
   />
   <link
     href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap"
@@ -75,7 +76,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-geosearch@3.10.0/dist/bundle.min.js"></script>
+  <!-- upgraded here, too -->
+  <script src="https://unpkg.com/leaflet-geosearch@3.11.1/dist/bundle.min.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -97,33 +99,33 @@
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // … your marker icons, layers, data loading, click‐to‐add code unchanged …
+    // … your icons, layers, data loading, click‐to‐add exactly as before …
 
-    // Add GeoSearch (OpenStreetMap) with forced zoom settings
+    // GeoSearch with the correct 'zoom' prop for v3.11.x
     const search = new window.GeoSearch.GeoSearchControl({
       provider: new window.GeoSearch.OpenStreetMapProvider(),
       style: 'bar',
       autoComplete: true,
       autoCompleteDelay: 200,
       showMarker: true,
-      retainZoomLevel: false,    // allow zoom to change
-      updateMap: true,           // recenter map on select :contentReference[oaicite:0]{index=0}
-      animateZoom: true,         // smooth animation
-      autoClose: true,           // close dropdown on select
+      retainZoomLevel: false,
+      updateMap: true,
+      animateZoom: true,
+      autoClose: true,
       keepResult: true,
-      zoomLevel: 16,             // fallback zoom when no bounds supplied :contentReference[oaicite:1]{index=1}
+      zoom: 16,
       searchLabel: 'Search for a place...'
     });
     map.addControl(search);
 
-    // Fallback: if bounds come back too tight or missing, fit or fly to a sensible view
+    // Force fit/zoom on every selection
     map.on('geosearch/showlocation', function(e) {
       const loc = e.location;
       if (loc.bounds) {
         const b = loc.bounds;
         map.fitBounds([[ b[1], b[0] ], [ b[3], b[2] ]]);
       } else {
-        map.flyTo([ loc.y, loc.x ], 16);
+        map.setView([ loc.y, loc.x ], 16);
       }
     });
   </script>
