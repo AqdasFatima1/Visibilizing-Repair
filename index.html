@@ -4,18 +4,9 @@
   <meta charset="utf-8" />
   <title>Repair Stories</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-  />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet-geosearch@3.11.1/assets/css/leaflet.css"
-  />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap"
-    rel="stylesheet"
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.11.1/assets/css/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600&display=swap" rel="stylesheet" />
   <style>
     body {
       margin: 0;
@@ -38,16 +29,34 @@
       z-index: 1000;
       max-width: 300px;
     }
-    .title-box h2 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: 600;
-      color: #5a5a5a;
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
     }
-    .title-box p {
-      margin: 8px 0 0;
-      font-size: 14px;
-      color: #777;
+    .tab-btn {
+      background: #e8e5df;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Urbanist', sans-serif;
+    }
+    .tab-btn.active {
+      background-color: #d4d0c9;
+      font-weight: 600;
+    }
+    .collapse-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .title-box.collapsed .tab-content {
+      display: none !important;
     }
     .leaflet-popup-content {
       font-family: 'Urbanist', sans-serif;
@@ -63,14 +72,27 @@
 </head>
 <body>
   <div class="title-box">
-    <h2>Repair Stories</h2>
-    <p>
-      This map collects data on repair practices and infrastructure in need of care.<br><br>
-      We’re charting everything from neighborhood electronics repair shops, to community “fix-it” clinics where volunteers mend clothes, to neighbors coming together to fix cracked stoops—all the acts that keep our streets and services running.<br><br>
-      We’re also mapping public infrastructure in need—broken sidewalks, flickering streetlights, unusable benches—so we can make neglect seen and demand the livable public spaces we all deserve!<br><br>
-      Click anywhere on the map to share where you go for repairs, or to mark something that needs fixing. You can even upload a photo!<br><br>
-      Use the toggle to view either where repair happens, where it’s needed, or both together.
-    </p>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('about')">About</button>
+      <button class="tab-btn" onclick="showTab('credits')">Credits</button>
+    </div>
+    <button class="collapse-btn" onclick="toggleCollapse()">−</button>
+    <div class="tab-content" id="about">
+      <h2>Repair Stories</h2>
+      <p>
+        This map collects data on repair practices and infrastructure in need of care.<br><br>
+        We’re charting everything from neighborhood electronics repair shops, to community “fix-it” clinics where volunteers mend clothes, to neighbors coming together to fix cracked stoops—all the acts that keep our streets and services running.<br><br>
+        We’re also mapping public infrastructure in need—broken sidewalks, flickering streetlights, unusable benches—so we can make neglect seen and demand the livable public spaces we all deserve!<br><br>
+        Click anywhere on the map to share where you go for repairs, or to mark something that needs fixing. You can even upload a photo!<br><br>
+        Use the toggle to view either where repair happens, where it’s needed, or both together.
+      </p>
+    </div>
+    <div class="tab-content" id="credits" style="display:none;">
+      <h2>About this Project</h2>
+      <p>
+        This map was developed by Aqdas Fatima as part of a thesis titled <em>"Towards a Radical Practice of Repair: Codesigned Approaches to Caring for Public Infrastructure"</em> in the Design and Urban Ecologies program at Parsons, The New School.
+      </p>
+    </div>
   </div>
   <div id="map"></div>
 
@@ -80,7 +102,6 @@
   <script src="https://unpkg.com/leaflet-geosearch@3.11.1/dist/bundle.min.js"></script>
 
   <script>
-    // Firebase setup
     const firebaseConfig = {
       apiKey: "AIzaSyAiKzc8OGzf3X-AfQbHk6bI6SoKtPvcq2E",
       authDomain: "repair-map-50701.firebaseapp.com",
@@ -93,85 +114,81 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Initialize map
     const map = L.map('map').setView([40.7128, -74.0060], 12);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap & CartoDB contributors',
       className: 'leaflet-warm-toned',
     }).addTo(map);
 
-    // Define icons
     const repairIcon = L.divIcon({
       className: 'leaflet-pushpin-repair',
       html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
                <path d="M16 2 L14 4 L18 4 Z" fill="#28a745"/>
                <circle cx="16" cy="16" r="14" stroke="#28a745" stroke-width="3" fill="#28a745"/>
              </svg>`,
-      iconSize: [32, 48],
-      iconAnchor: [16, 48],
-      popupAnchor: [0, -30]
+      iconSize: [32, 48], iconAnchor: [16, 48], popupAnchor: [0, -30]
     });
+
     const needRepairIcon = L.divIcon({
       className: 'leaflet-pushpin-need',
       html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
                <path d="M16 2 L14 4 L18 4 Z" fill="#fd7e14"/>
                <circle cx="16" cy="16" r="14" stroke="#fd7e14" stroke-width="3" fill="#fd7e14"/>
              </svg>`,
-      iconSize: [32, 48],
-      iconAnchor: [16, 48],
-      popupAnchor: [0, -30]
+      iconSize: [32, 48], iconAnchor: [16, 48], popupAnchor: [0, -30]
     });
 
-    // Layers for markers
+    const repairServiceIcon = L.divIcon({
+      className: 'leaflet-pushpin-service',
+      html: `<svg width="32" height="48" viewBox="0 0 32 48" xmlns="http://www.w3.org/2000/svg" fill="none">
+               <path d="M16 2 L14 4 L18 4 Z" fill="#007bff"/>
+               <circle cx="16" cy="16" r="14" stroke="#007bff" stroke-width="3" fill="#007bff"/>
+             </svg>`,
+      iconSize: [32, 48], iconAnchor: [16, 48], popupAnchor: [0, -30]
+    });
+
     const repairLayer = L.layerGroup().addTo(map);
     const needRepairLayer = L.layerGroup().addTo(map);
+    const repairServiceLayer = L.layerGroup().addTo(map);
 
-    // Load existing markers
     db.collection("markers").get().then(snapshot => {
       snapshot.forEach(doc => {
         const data = doc.data();
-        const popupContent = `
-          <div class='custom-popup'>
-            <strong>${data.title}</strong><br>${data.description}
-            ${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top:6px;border-radius:6px;" />` : ""}
-          </div>`;
-        const icon = data.type === "repair" ? repairIcon : needRepairIcon;
+        const popupContent = `<div class='custom-popup'><strong>${data.title}</strong><br>${data.description}${data.image ? `<br><img src="${data.image}" width="100%" style="margin-top:6px;border-radius:6px;" />` : ""}</div>`;
+        let icon = repairIcon;
+        if (data.type === "need") icon = needRepairIcon;
+        else if (data.type === "service") icon = repairServiceIcon;
         const marker = L.marker([data.lat, data.lng], { icon }).bindPopup(popupContent);
-        if (data.type === "repair") {
-          marker.addTo(repairLayer);
-        } else {
-          marker.addTo(needRepairLayer);
-        }
+        if (data.type === "repair") marker.addTo(repairLayer);
+        else if (data.type === "need") marker.addTo(needRepairLayer);
+        else if (data.type === "service") marker.addTo(repairServiceLayer);
       });
     });
 
-    // Layer control
     const baseMaps = {
       "<span class='repair-icon'></span>Repairs are Happening Here!": repairLayer,
       "<span class='need-repair-icon'></span>Repairs are Needed Here!": needRepairLayer,
-      "<span style='color:#444'>Both</span>": L.layerGroup([repairLayer, needRepairLayer]).addTo(map)
+      "<span class='service-repair-icon'></span>Repair Services Available": repairServiceLayer,
+      "<span style='color:#444'>All</span>": L.layerGroup([repairLayer, needRepairLayer, repairServiceLayer]).addTo(map)
     };
     L.control.layers(baseMaps, null, { collapsed: false }).addTo(map);
 
-    // Click to add marker
     map.on('click', function(e) {
-      L.popup()
-        .setLatLng(e.latlng)
-        .setContent(`
-          <div style="font-family:Urbanist,sans-serif;font-size:14px;">
-            <label>Type:
-              <select id="marker-type">
-                <option value="repair">Repairs are Happening</option>
-                <option value="need">Repairs are Needed</option>
-              </select>
-            </label><br><br>
-            <label>Title:<br><input id="marker-title" type="text" style="width:100%" /></label><br><br>
-            <label>Description:<br><textarea id="marker-description" rows="3" style="width:100%"></textarea></label><br><br>
-            <label>Image URL:<br><input id="marker-image" type="text" style="width:100%" /></label><br><br>
-            <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
-          </div>
-        `)
-        .openOn(map);
+      L.popup().setLatLng(e.latlng).setContent(`
+        <div style="font-family:Urbanist,sans-serif;font-size:14px;">
+          <label>Type:
+            <select id="marker-type">
+              <option value="repair">Repairs are Happening</option>
+              <option value="need">Repairs are Needed</option>
+              <option value="service">Repair Services Available</option>
+            </select>
+          </label><br><br>
+          <label>Title:<br><input id="marker-title" type="text" style="width:100%" /></label><br><br>
+          <label>Description:<br><textarea id="marker-description" rows="3" style="width:100%"></textarea></label><br><br>
+          <label>Image URL:<br><input id="marker-image" type="text" style="width:100%" /></label><br><br>
+          <button onclick="submitMarker(${e.latlng.lat}, ${e.latlng.lng})">Submit</button>
+        </div>
+      `).openOn(map);
     });
 
     function submitMarker(lat, lng) {
@@ -191,7 +208,6 @@
         .catch(err => alert('Error: ' + err));
     }
 
-    // GeoSearch control
     const search = new window.GeoSearch.GeoSearchControl({
       provider: new window.GeoSearch.OpenStreetMapProvider(),
       style: 'bar',
@@ -208,7 +224,6 @@
     });
     map.addControl(search);
 
-    // Zoom/fly to selected location
     map.on('geosearch/showlocation', function(e) {
       const loc = e.location;
       if (loc.bounds) {
@@ -218,6 +233,20 @@
         map.flyTo([ loc.y, loc.x ], 16);
       }
     });
+
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+      document.getElementById(tabId).style.display = 'block';
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+    }
+
+    function toggleCollapse() {
+      const box = document.querySelector('.title-box');
+      const btn = document.querySelector('.collapse-btn');
+      box.classList.toggle('collapsed');
+      btn.textContent = box.classList.contains('collapsed') ? '+' : '−';
+    }
   </script>
 </body>
 </html>
